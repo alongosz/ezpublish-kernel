@@ -28,6 +28,8 @@ class ElasticsearchEngineFactory implements ContainerAwareInterface
      */
     private $defaultConnection;
 
+    private $searchEngineClass;
+
     public function __construct(
         RepositoryConfigurationProvider $repositoryConfigurationProvider,
         $defaultConnection,
@@ -35,6 +37,7 @@ class ElasticsearchEngineFactory implements ContainerAwareInterface
     ) {
         $this->repositoryConfigurationProvider = $repositoryConfigurationProvider;
         $this->defaultConnection = $defaultConnection;
+        $this->searchEngineClass = $searchEngineClass;
     }
 
     public function buildEngine()
@@ -46,10 +49,13 @@ class ElasticsearchEngineFactory implements ContainerAwareInterface
             $connection = $repositoryConfig['search']['connection'];
         }
 
-        $engineId = $this->container->getParameter(
-            "ez_search_engine_elasticsearch.connection.$connection.engine_id"
+        return new $this->searchEngineClass(
+            $this->container->get("ezpublish.search.elasticsearch.content.gateway.native.$connection"),
+            $this->container->get("ezpublish.search.elasticsearch.location.gateway.native.$connection"),
+            $this->container->get('ezpublish.search.elasticsearch.mapper.standard'),
+            $this->container->get('ezpublish.search.elasticsearch.extractor.loading'),
+            'content',
+            'location'
         );
-
-        return $this->container->get($engineId);
     }
 }
