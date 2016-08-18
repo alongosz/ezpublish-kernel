@@ -25,6 +25,7 @@ use eZ\Publish\Core\Base\Exceptions\NotFoundException;
 use eZ\Publish\Core\Base\Exceptions\InvalidArgumentException;
 use eZ\Publish\SPI\Persistence\Content\Language\Handler as LanguageHandler;
 use eZ\Publish\Core\Search\Legacy\Content\Mapper\FullTextMapper;
+use eZ\Publish\SPI\Search\Indexing\ContentIndexing;
 
 /**
  * The Content Search handler retrieves sets of of Content objects, based on a
@@ -47,7 +48,7 @@ use eZ\Publish\Core\Search\Legacy\Content\Mapper\FullTextMapper;
  * content objects based on criteria, which could not be converted in to
  * database statements.
  */
-class Handler implements SearchHandlerInterface
+class Handler implements SearchHandlerInterface, ContentIndexing
 {
     /**
      * Content locator gateway.
@@ -395,6 +396,14 @@ class Handler implements SearchHandlerInterface
      * {@inheritdoc}
      */
     public function commit()
+    {
+        // Not needed with Legacy Storage/Search Engine
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function commitIndex()
     {
         // Not needed with Legacy Storage/Search Engine
     }
