@@ -380,4 +380,12 @@ class Handler implements SearchHandlerInterface, ContentIndexing, LocationIndexi
     {
         $this->gateway->flush();
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function commit()
+    {
+        $this->gateway->flush();
+    }
 }

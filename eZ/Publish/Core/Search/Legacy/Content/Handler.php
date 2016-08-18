@@ -392,11 +392,9 @@ class Handler implements SearchHandlerInterface
     }
 
     /**
-     * Commits the data to the index, making it available for search.
-     *
-     * @param bool $flush
+     * {@inheritdoc}
      */
-    public function commit($flush = false)
+    public function commit()
     {
         // Not needed with Legacy Storage/Search Engine
     }

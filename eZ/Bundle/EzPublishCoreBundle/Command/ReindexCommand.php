@@ -103,6 +103,9 @@ EOT
             $this->createLocationsIndex($bulkCount);
         }
 
+        // Make changes available for search
+        $this->searchHandler->commit();
+
         $output->writeln(PHP_EOL . 'Finished creating search index for the engine: ' . get_parent_class($this->searchHandler));
     }
 
