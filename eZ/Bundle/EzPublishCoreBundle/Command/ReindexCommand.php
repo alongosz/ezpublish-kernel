@@ -23,6 +23,9 @@ use PDO;
 
 class ReindexCommand extends ContainerAwareCommand
 {
+    const CONTENTOBJECT_TABLE = 'ezcontentobject';
+    const CONTENTOBJECT_TREE_TABLE = 'ezcontentobject_tree';
+
     /**
      * @var \eZ\Publish\SPI\Search\Indexing\ContentIndexing | \eZ\Publish\SPI\Search\Indexing\LocationIndexing
      */
@@ -97,16 +100,14 @@ EOT
 
         if ($this->searchHandler instanceof ContentIndexing) {
             $this->createContentIndex($bulkCount);
-        }
-
-        if ($this->searchHandler instanceof LocationIndexing) {
-            $this->createLocationsIndex($bulkCount);
+        } else {
+            $output->writeln('Search Handler ' . get_class($this->searchHandler) . ' does not support ContentIndexing. Nothing to do.');
         }
 
         // Make changes available for search
         $this->searchHandler->commit();
 
-        $output->writeln(PHP_EOL . 'Finished creating search index for the engine: ' . get_parent_class($this->searchHandler));
+        $output->writeln('Finished creating search index for the engine: ' . get_parent_class($this->searchHandler));
     }
 
     /**
@@ -116,32 +117,21 @@ EOT
      */
     private function createContentIndex($bulkCount)
     {
-        $query = $this->databaseHandler->createSelectQuery();
-        $query->select('count(id)')
-            ->from('ezcontentobject')
-            ->where($query->expr->eq('status', ContentInfo::STATUS_PUBLISHED));
-        $stmt = $query->prepare();
-        $stmt->execute();
-        $totalCount = $stmt->fetchColumn();
+        $stmt = $this->getContentObjectStmt(['count(id)']);
+        $totalCount = intval($stmt->fetchColumn());
 
-        $query = $this->databaseHandler->createSelectQuery();
-        $query->select('id', 'current_version')
-            ->from('ezcontentobject')
-            ->where($query->expr->eq('status', ContentInfo::STATUS_PUBLISHED));
-
-        $stmt = $query->prepare();
-        $stmt->execute();
+        $stmt = $this->getContentObjectStmt(['id', 'current_version', 'node_id']);
 
         $this->searchHandler->purgeIndex();
-
-        $this->output->writeln('Indexing Content...');
 
         /** @var \Symfony\Component\Console\Helper\ProgressBar $progress */
         $progress = new ProgressBar($this->output);
         $progress->start($totalCount);
         $i = 0;
+        $indexLocations = $this->searchHandler instanceof LocationIndexing;
         do {
             $contentObjects = [];
+            $locations = [];
 
             for ($k = 0; $k <= $bulkCount; ++$k) {
                 if (!$row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -156,6 +146,18 @@ EOT
                 } catch (NotFoundException $e) {
                     $this->logWarning($progress, "Could not load current version of Content with id ${row['id']}, so skipped for indexing. Full exception: " . $e->getMessage());
                 }
+
+                if (!$indexLocations || empty($row['node_id'])) {
+                    continue;
+                }
+                $locationNodeIds = $this->getContentObjectLocationNodeIds($row['id']);
+                foreach ($locationNodeIds as $nodeId) {
+                    try {
+                        $locations[] = $this->persistenceHandler->locationHandler()->load($nodeId);
+                    } catch (NotFoundException $e) {
+                        $this->logWarning($progress, "Could not load Location with id ${row['node_id']}, so skipped for indexing. Full exception: " . $e->getMessage());
+                    }
+                }
             }
 
             foreach ($contentObjects as $contentObject) {
@@ -163,68 +165,6 @@ EOT
                     $this->searchHandler->indexContent($contentObject);
                 } catch (NotFoundException $e) {
                     $this->logWarning($progress, 'Content with id ' . $contentObject->versionInfo->id . ' has missing data, so skipped for indexing. Full exception: ' . $e->getMessage());
-                }
-            }
-
-            $progress->advance($k);
-        } while (($i += $bulkCount) < $totalCount);
-
-        $progress->finish();
-    }
-
-    /**
-     * Wrapper for indexing locations.
-     *
-     * @param int $bulkCount a number of node rows to fetch in a single batch
-     */
-    private function createLocationsIndex($bulkCount)
-    {
-        $query = $this->databaseHandler->createSelectQuery();
-        $query
-            ->select('count(node_id)')
-            ->from('ezcontentobject_tree')
-            ->where(
-                $query->expr->neq(
-                    $this->databaseHandler->quoteColumn('contentobject_id'),
-                    $query->bindValue(0, null, PDO::PARAM_INT)
-                )
-            );
-        $stmt = $query->prepare();
-        $stmt->execute();
-        $totalCount = $stmt->fetchColumn();
-
-        $query = $this->databaseHandler->createSelectQuery();
-        $query
-            ->select('node_id')
-            ->from('ezcontentobject_tree')
-            ->where(
-                $query->expr->neq(
-                    $this->databaseHandler->quoteColumn('contentobject_id'),
-                    $query->bindValue(0, null, PDO::PARAM_INT)
-                )
-            );
-
-        $stmt = $query->prepare();
-        $stmt->execute();
-
-        $this->output->writeln('Indexing Locations...');
-
-        /** @var \Symfony\Component\Console\Helper\ProgressBar $progress */
-        $progress = new ProgressBar($this->output);
-        $progress->start($totalCount);
-        $i = 0;
-        do {
-            $locations = [];
-
-            for ($k = 0; $k <= $bulkCount; ++$k) {
-                if (!$row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    break;
-                }
-
-                try {
-                    $locations[] = $this->persistenceHandler->locationHandler()->load($row['node_id']);
-                } catch (NotFoundException $e) {
-                    $this->logWarning($progress, "Could not load Location with id ${row['node_id']}, so skipped for indexing. Full exception: " . $e->getMessage());
                 }
             }
 
@@ -240,6 +180,57 @@ EOT
         } while (($i += $bulkCount) < $totalCount);
 
         $progress->finish();
+        $this->output->writeln('');
+    }
+
+    /**
+     * Get PDOStatement to fetch metadata about content objects to be indexed.
+     *
+     * @param array $fields Select fields
+     * @return \PDOStatement
+     */
+    private function getContentObjectStmt(array $fields)
+    {
+        $query = $this->databaseHandler->createSelectQuery();
+        $query->select($fields)
+            ->from($this->databaseHandler->quoteTable(self::CONTENTOBJECT_TABLE))
+            ->leftJoin(
+                $this->databaseHandler->quoteTable(self::CONTENTOBJECT_TREE_TABLE),
+                $query->expr->lAnd(
+                    $query->expr->eq(
+                        $this->databaseHandler->quoteColumn('id', self::CONTENTOBJECT_TABLE),
+                        $this->databaseHandler->quoteColumn('contentobject_id', self::CONTENTOBJECT_TREE_TABLE)
+                    ),
+                    // join only main location
+                    $query->expr->eq(
+                        $this->databaseHandler->quoteColumn('main_node_id'),
+                        $this->databaseHandler->quoteColumn('node_id')
+                    )
+                ))->where($query->expr->eq('status', ContentInfo::STATUS_PUBLISHED));
+        $stmt = $query->prepare();
+        $stmt->execute();
+
+        return $stmt;
+    }
+
+    /**
+     * Fetch location nodes Ids for the given content object.
+     *
+     * @param int $contentObjectId
+     * @return array Location nodes Ids
+     */
+    private function getContentObjectLocationNodeIds($contentObjectId)
+    {
+        $query = $this->databaseHandler->createSelectQuery();
+        $query->select('node_id')
+            ->from($this->databaseHandler->quoteTable(self::CONTENTOBJECT_TREE_TABLE))
+            ->where($query->expr->eq('contentobject_id', $contentObjectId));
+
+        $stmt = $query->prepare();
+        $stmt->execute();
+        $nodeIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        return is_array($nodeIds) ? array_map('intval', $nodeIds) : [];
     }
 
     /**
