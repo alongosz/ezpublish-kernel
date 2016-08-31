@@ -10,8 +10,8 @@ namespace eZ\Bundle\EzPublishCoreBundle\Command;
 
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Helper\ProgressBar;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use eZ\Publish\SPI\Search\Indexing;
 use eZ\Publish\SPI\Search\Indexing\ContentIndexing;
@@ -78,7 +78,8 @@ class ReindexCommand extends ContainerAwareCommand
         $this
             ->setName('ezplatform:reindex')
             ->setDescription('Recreate search engine index')
-            ->addArgument('bulk_count', InputArgument::OPTIONAL, 'Number of objects to be indexed at once', 5)
+            ->addOption('iteration-count', 'c', InputOption::VALUE_OPTIONAL, 'Number of objects to be indexed in a single iteration', 5)
+            ->addOption('no-iteration-commit', null, InputOption::VALUE_NONE, 'Do not commit after each iteration')
             ->setHelp(
                 <<<EOT
 The command <info>%command.name%</info> indexes current configured database in configured search engine index.
@@ -92,14 +93,15 @@ EOT
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->output = $output;
-        $bulkCount = $input->getArgument('bulk_count');
+        $iterationCount = $input->getOption('iteration-count');
+        $noIterationCommit = $input->getOption('no-iteration-commit');
 
         $output->writeln('Creating search index for the engine: ' . get_parent_class($this->searchHandler));
 
         $this->searchHandler->purgeIndex();
 
         if ($this->searchHandler instanceof ContentIndexing) {
-            $this->createContentIndex($bulkCount);
+            $this->createContentIndex($iterationCount, empty($noIterationCommit));
         } else {
             $output->writeln('Search Handler ' . get_class($this->searchHandler) . ' does not support ContentIndexing. Nothing to do.');
         }
@@ -113,9 +115,10 @@ EOT
     /**
      * Wrapper for indexing Content.
      *
-     * @param int $bulkCount a number of object rows to fetch in single batch
+     * @param int $iterationCount a number of object items to be indexed at once
+     * @param bool $commit commit search index after each iteration
      */
-    private function createContentIndex($bulkCount)
+    private function createContentIndex($iterationCount, $commit)
     {
         $stmt = $this->getContentObjectStmt(['count(id)']);
         $totalCount = intval($stmt->fetchColumn());
@@ -133,7 +136,7 @@ EOT
             $contentObjects = [];
             $locations = [];
 
-            for ($k = 0; $k <= $bulkCount; ++$k) {
+            for ($k = 0; $k <= $iterationCount; ++$k) {
                 if (!$row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                     break;
                 }
@@ -176,8 +179,12 @@ EOT
                 }
             }
 
+            if ($commit) {
+                $this->searchHandler->commit();
+            }
+
             $progress->advance($k);
-        } while (($i += $bulkCount) < $totalCount);
+        } while (($i += $iterationCount) < $totalCount);
 
         $progress->finish();
         $this->output->writeln('');
