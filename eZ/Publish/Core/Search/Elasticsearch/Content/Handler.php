@@ -5,8 +5,6 @@
  *
  * @copyright Copyright (C) eZ Systems AS. All rights reserved.
  * @license For full copyright and license information view LICENSE file distributed with this source code.
- *
- * @version //autogentag//
  */
 namespace eZ\Publish\Core\Search\Elasticsearch\Content;
 
@@ -14,13 +12,14 @@ use eZ\Publish\API\Repository\Values\Content\Query;
 use eZ\Publish\API\Repository\Values\Content\LocationQuery;
 use eZ\Publish\API\Repository\Values\Content\Query\Criterion;
 use eZ\Publish\SPI\Persistence\Content;
-use eZ\Publish\SPI\Persistence\Content\Type;
 use eZ\Publish\SPI\Search\Handler as SearchHandlerInterface;
 use eZ\Publish\SPI\Persistence\Content\Location;
 use eZ\Publish\Core\Base\Exceptions\NotFoundException;
 use eZ\Publish\Core\Base\Exceptions\InvalidArgumentException;
+use eZ\Publish\SPI\Search\Indexing\ContentIndexing;
+use eZ\Publish\SPI\Search\Indexing\LocationIndexing;
 
-class Handler implements SearchHandlerInterface
+class Handler implements SearchHandlerInterface, ContentIndexing, LocationIndexing
 {
     /**
      * @var \eZ\Publish\Core\Search\Elasticsearch\Content\Gateway
@@ -347,6 +346,14 @@ class Handler implements SearchHandlerInterface
     }
 
     public function flush()
+    {
+        $this->gateway->flush();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function commit()
     {
         $this->gateway->flush();
     }
