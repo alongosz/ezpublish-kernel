@@ -65,7 +65,7 @@ class ReindexCommand extends ContainerAwareCommand
         $this->databaseHandler = $this->getContainer()->get('ezpublish.connection');
         if (!$this->searchHandler instanceof Indexing) {
             throw new RuntimeException(
-                'Expected to find Search Engine Handler implementing Indexing but found something else.'
+                sprintf('Expected to find Search Engine Handler implementing "%s" to be able to re index, but currently configured handler "%s" does not implement it', Indexing::class, get_parent_class($this->searchHandler))
             );
         }
     }
@@ -78,8 +78,8 @@ class ReindexCommand extends ContainerAwareCommand
         $this
             ->setName('ezplatform:reindex')
             ->setDescription('Recreate search engine index')
-            ->addOption('iteration-count', 'c', InputOption::VALUE_OPTIONAL, 'Number of objects to be indexed in a single iteration', 5)
-            ->addOption('no-iteration-commit', null, InputOption::VALUE_NONE, 'Do not commit after each iteration')
+            ->addOption('iteration-count', 'c', InputOption::VALUE_OPTIONAL, 'Number of objects to be indexed in a single iteration', 20)
+            ->addOption('no-commit', null, InputOption::VALUE_NONE, 'Do not commit after each iteration')
             ->setHelp(
                 <<<EOT
 The command <info>%command.name%</info> indexes current configured database in configured search engine index.
@@ -94,20 +94,18 @@ EOT
     {
         $this->output = $output;
         $iterationCount = $input->getOption('iteration-count');
-        $noIterationCommit = $input->getOption('no-iteration-commit');
+        $noCommit = $input->getOption('no-commit');
 
         $output->writeln('Creating search index for the engine: ' . get_parent_class($this->searchHandler));
 
-        $this->searchHandler->purgeIndex();
-
         if ($this->searchHandler instanceof ContentIndexing) {
-            $this->createContentIndex($iterationCount, empty($noIterationCommit));
+            $this->searchHandler->purgeIndex();
+            $this->createContentIndex($iterationCount, empty($noCommit));
+            // Make changes available for search
+            $this->searchHandler->commit();
         } else {
             $output->writeln('Search Handler ' . get_class($this->searchHandler) . ' does not support ContentIndexing. Nothing to do.');
         }
-
-        // Make changes available for search
-        $this->searchHandler->commit();
 
         $output->writeln('Finished creating search index for the engine: ' . get_parent_class($this->searchHandler));
     }
@@ -120,10 +118,10 @@ EOT
      */
     private function createContentIndex($iterationCount, $commit)
     {
-        $stmt = $this->getContentObjectStmt(['count(id)']);
+        $stmt = $this->getContentDbFieldsStmt(['count(id)']);
         $totalCount = intval($stmt->fetchColumn());
 
-        $stmt = $this->getContentObjectStmt(['id', 'current_version', 'node_id']);
+        $stmt = $this->getContentDbFieldsStmt(['id', 'current_version', 'node_id']);
 
         $this->searchHandler->purgeIndex();
 
@@ -131,7 +129,6 @@ EOT
         $progress = new ProgressBar($this->output);
         $progress->start($totalCount);
         $i = 0;
-        $indexLocations = $this->searchHandler instanceof LocationIndexing;
         do {
             $contentObjects = [];
             $locations = [];
@@ -150,10 +147,10 @@ EOT
                     $this->logWarning($progress, "Could not load current version of Content with id ${row['id']}, so skipped for indexing. Full exception: " . $e->getMessage());
                 }
 
-                if (!$indexLocations || empty($row['node_id'])) {
+                if (!($this->searchHandler instanceof LocationIndexing) || empty($row['node_id'])) {
                     continue;
                 }
-                $locationNodeIds = $this->getContentObjectLocationNodeIds($row['id']);
+                $locationNodeIds = $this->getContentLocationIds($row['id']);
                 foreach ($locationNodeIds as $nodeId) {
                     try {
                         $locations[] = $this->persistenceHandler->locationHandler()->load($nodeId);
@@ -196,7 +193,7 @@ EOT
      * @param array $fields Select fields
      * @return \PDOStatement
      */
-    private function getContentObjectStmt(array $fields)
+    private function getContentDbFieldsStmt(array $fields)
     {
         $query = $this->databaseHandler->createSelectQuery();
         $query->select($fields)
@@ -221,12 +218,12 @@ EOT
     }
 
     /**
-     * Fetch location nodes Ids for the given content object.
+     * Fetch location Ids for the given content object.
      *
      * @param int $contentObjectId
      * @return array Location nodes Ids
      */
-    private function getContentObjectLocationNodeIds($contentObjectId)
+    private function getContentLocationIds($contentObjectId)
     {
         $query = $this->databaseHandler->createSelectQuery();
         $query->select('node_id')
