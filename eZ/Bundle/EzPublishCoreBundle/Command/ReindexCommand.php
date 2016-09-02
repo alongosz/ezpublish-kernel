@@ -121,7 +121,7 @@ EOT
         $stmt = $this->getContentDbFieldsStmt(['count(id)']);
         $totalCount = intval($stmt->fetchColumn());
 
-        $stmt = $this->getContentDbFieldsStmt(['id', 'current_version', 'node_id']);
+        $stmt = $this->getContentDbFieldsStmt(['id', 'current_version']);
 
         $this->searchHandler->purgeIndex();
 
@@ -139,24 +139,26 @@ EOT
                 }
 
                 try {
-                    $contentObjects[] = $this->persistenceHandler->contentHandler()->load(
+                    $content = $this->persistenceHandler->contentHandler()->load(
                         $row['id'],
                         $row['current_version']
                     );
+                    $contentObjects[] = $content;
+
+                    // Skip location indexing if search engine does not use it, or if content does not have locations
+                    if (!($this->searchHandler instanceof LocationIndexing) || empty($content->versionInfo->contentInfo->mainLocationId)) {
+                        continue;
+                    }
+                    $locationIds = $this->getContentLocationIds($row['id']);
+                    foreach ($locationIds as $locationId) {
+                        try {
+                            $locations[] = $this->persistenceHandler->locationHandler()->load($locationId);
+                        } catch (NotFoundException $e) {
+                            $this->logWarning($progress, "Could not load Location with id $locationId, so skipped for indexing. Full exception: " . $e->getMessage());
+                        }
+                    }
                 } catch (NotFoundException $e) {
                     $this->logWarning($progress, "Could not load current version of Content with id ${row['id']}, so skipped for indexing. Full exception: " . $e->getMessage());
-                }
-
-                if (!($this->searchHandler instanceof LocationIndexing) || empty($row['node_id'])) {
-                    continue;
-                }
-                $locationNodeIds = $this->getContentLocationIds($row['id']);
-                foreach ($locationNodeIds as $nodeId) {
-                    try {
-                        $locations[] = $this->persistenceHandler->locationHandler()->load($nodeId);
-                    } catch (NotFoundException $e) {
-                        $this->logWarning($progress, "Could not load Location with id ${row['node_id']}, so skipped for indexing. Full exception: " . $e->getMessage());
-                    }
                 }
             }
 
@@ -198,19 +200,7 @@ EOT
         $query = $this->databaseHandler->createSelectQuery();
         $query->select($fields)
             ->from($this->databaseHandler->quoteTable(self::CONTENTOBJECT_TABLE))
-            ->leftJoin(
-                $this->databaseHandler->quoteTable(self::CONTENTOBJECT_TREE_TABLE),
-                $query->expr->lAnd(
-                    $query->expr->eq(
-                        $this->databaseHandler->quoteColumn('id', self::CONTENTOBJECT_TABLE),
-                        $this->databaseHandler->quoteColumn('contentobject_id', self::CONTENTOBJECT_TREE_TABLE)
-                    ),
-                    // join only main location
-                    $query->expr->eq(
-                        $this->databaseHandler->quoteColumn('main_node_id'),
-                        $this->databaseHandler->quoteColumn('node_id')
-                    )
-                ))->where($query->expr->eq('status', ContentInfo::STATUS_PUBLISHED));
+            ->where($query->expr->eq('status', ContentInfo::STATUS_PUBLISHED));
         $stmt = $query->prepare();
         $stmt->execute();
 
