@@ -131,32 +131,16 @@ EOT
         $i = 0;
         do {
             $contentObjects = [];
-            $locations = [];
-
             for ($k = 0; $k <= $iterationCount; ++$k) {
                 if (!$row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                     break;
                 }
 
                 try {
-                    $content = $this->persistenceHandler->contentHandler()->load(
+                    $contentObjects[] = $this->persistenceHandler->contentHandler()->load(
                         $row['id'],
                         $row['current_version']
                     );
-                    $contentObjects[] = $content;
-
-                    // Skip location indexing if search engine does not use it, or if content does not have locations
-                    if (!($this->searchHandler instanceof LocationIndexing) || empty($content->versionInfo->contentInfo->mainLocationId)) {
-                        continue;
-                    }
-                    $locationIds = $this->getContentLocationIds($row['id']);
-                    foreach ($locationIds as $locationId) {
-                        try {
-                            $locations[] = $this->persistenceHandler->locationHandler()->load($locationId);
-                        } catch (NotFoundException $e) {
-                            $this->logWarning($progress, "Could not load Location with id $locationId, so skipped for indexing. Full exception: " . $e->getMessage());
-                        }
-                    }
                 } catch (NotFoundException $e) {
                     $this->logWarning($progress, "Could not load current version of Content with id ${row['id']}, so skipped for indexing. Full exception: " . $e->getMessage());
                 }
@@ -165,16 +149,13 @@ EOT
             foreach ($contentObjects as $contentObject) {
                 try {
                     $this->searchHandler->indexContent($contentObject);
+                    // Skip location indexing if search engine does not use it, or if content does not have locations
+                    if (!($this->searchHandler instanceof LocationIndexing) || empty($contentObject->versionInfo->contentInfo->mainLocationId)) {
+                        continue;
+                    }
+                    $this->indexLocations($contentObject->versionInfo->contentInfo->id, $progress);
                 } catch (NotFoundException $e) {
                     $this->logWarning($progress, 'Content with id ' . $contentObject->versionInfo->id . ' has missing data, so skipped for indexing. Full exception: ' . $e->getMessage());
-                }
-            }
-
-            foreach ($locations as $location) {
-                try {
-                    $this->searchHandler->indexLocation($location);
-                } catch (NotFoundException $e) {
-                    $this->logWarning($progress, 'Location with id ' . $location->id . ' has missing data, so skipped for indexing. Full exception: ' . $e->getMessage());
                 }
             }
 
@@ -187,6 +168,25 @@ EOT
 
         $progress->finish();
         $this->output->writeln('');
+    }
+
+    /**
+     * Index Locations of the given Content Object.
+     *
+     * @param int $contentId Content Object Id
+     * @param \Symfony\Component\Console\Helper\ProgressBar $progress
+     */
+    private function indexLocations($contentId, ProgressBar $progress)
+    {
+        $locationIds = $this->getContentLocationIds($contentId);
+        foreach ($locationIds as $locationId) {
+            try {
+                $location = $this->persistenceHandler->locationHandler()->load($locationId);
+                $this->searchHandler->indexLocation($location);
+            } catch (NotFoundException $e) {
+                $this->logWarning($progress, "Could not load Location with id $locationId, so skipped for indexing. Full exception: " . $e->getMessage());
+            }
+        }
     }
 
     /**
