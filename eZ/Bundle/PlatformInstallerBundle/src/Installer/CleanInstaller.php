@@ -16,13 +16,18 @@ class CleanInstaller extends DbBasedInstaller implements Installer
 
     public function importSchema()
     {
-        $this->runQueriesFromFile($this->getKernelSQLFileForDBMS('schema.sql'));
-        $this->runQueriesFromFile($this->getKernelSQLFileForDBMS('dfs_schema.sql'));
+        $this->importSchemaFromYaml(dirname(__DIR__) . '/../../../../data/schema.yml');
     }
 
     public function importData()
     {
+        $databasePlatform = $this->db->getDatabasePlatform();
+
         $this->runQueriesFromFile($this->getKernelSQLFileForDBMS('cleandata.sql'));
+
+        if ($databasePlatform->supportsSequences()) {
+            $this->alignSequences();
+        }
     }
 
     public function importBinaries()
