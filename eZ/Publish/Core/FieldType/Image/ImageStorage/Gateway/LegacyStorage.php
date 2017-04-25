@@ -276,16 +276,10 @@ class LegacyStorage extends Gateway
             )
         )->from(
             $connection->quoteTable('ezcontentobject_attribute')
-        )->innerJoin(
-            $connection->quoteTable('ezimagefile'),
-            $selectQuery->expr->eq(
-                $connection->quoteColumn('contentobject_attribute_id', 'ezimagefile'),
-                $connection->quoteColumn('id', 'ezcontentobject_attribute')
-            )
         )->where(
             $selectQuery->expr->lAnd(
                 $selectQuery->expr->eq(
-                    $connection->quoteColumn('contentobject_attribute_id'),
+                    $connection->quoteColumn('id','ezcontentobject_attribute'),
                     $selectQuery->bindValue($fieldId, null, \PDO::PARAM_INT)
                 ),
                 $selectQuery->expr->neq(
@@ -293,8 +287,8 @@ class LegacyStorage extends Gateway
                     $selectQuery->bindValue($versionNo, null, \PDO::PARAM_INT)
                 ),
                 $selectQuery->expr->like(
-                    $connection->quoteColumn('filepath'),
-                    $selectQuery->bindValue($path . '%')
+                    $connection->quoteColumn('data_text'),
+                    $selectQuery->bindValue('%' . $path . '%')
                 )
             )
         );
