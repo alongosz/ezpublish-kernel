@@ -571,6 +571,46 @@ class ImageIntegrationTest extends FileSearchBaseIntegrationTest
         );
     }
 
+    /**
+     * @see https://jira.ez.no/browse/EZP-27266
+     */
+    public function testThatRemovingDraftRemovesNonPublishedImages()
+    {
+        $repository = $this->getRepository();
+
+        // Load services
+        $contentService = $repository->getContentService();
+        $contentTypeService = $repository->getContentTypeService();
+        $locationService = $repository->getLocationService();
+
+        // create content without an image and publish it
+        $contentCreateStruct = $contentService->newContentCreateStruct(
+            $contentTypeService->loadContentTypeByIdentifier('image'),
+            'eng-GB'
+        );
+        $contentCreateStruct->setField('name', 'EZP27266_1');
+        $contentDraft = $contentService->createContent(
+            $contentCreateStruct,
+            [$locationService->newLocationCreateStruct(2)]
+        );
+        $publishedContent = $contentService->publishVersion($contentDraft->versionInfo);
+
+        // update content with an image
+        $contentDraft = $contentService->createContentDraft($publishedContent->contentInfo);
+        $contentUpdateStruct = $contentService->newContentUpdateStruct();
+        $contentUpdateStruct->setField('image', $this->getValidCreationFieldData());
+        $contentDraft = $contentService->updateContent($contentDraft->versionInfo, $contentUpdateStruct);
+        $originalFileUri = $contentDraft->fields['image']['eng-GB']->uri;
+
+        $contentService->deleteVersion($contentDraft->versionInfo);
+
+        // image should be deleted
+        $this->assertFalse(
+            $this->uriExistsOnIO($originalFileUri),
+            "Asserting image file $originalFileUri has been removed."
+        );
+    }
+
     public function testUpdateImageAltTextOnly()
     {
         $repository = $this->getRepository();
