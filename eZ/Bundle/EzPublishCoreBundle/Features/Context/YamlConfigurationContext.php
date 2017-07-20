@@ -24,6 +24,17 @@ class YamlConfigurationContext implements Context
         $destinationFileName = 'ezplatform_behat_' . sha1($yamlString) . '.yml';
         $destinationFilePath = 'app/config/' . $destinationFileName;
 
+        // TMP: some "remote" debugging for Travis:
+        $processUser = posix_getpwuid(posix_geteuid());
+        var_dump(
+            [
+                'user' => $processUser['name'],
+                'cwd' => getcwd(),
+                'dest' => $destinationFilePath,
+                'is_writable' => is_writable(dirname($destinationFilePath)),
+            ]
+        );
+
         if (!file_exists($destinationFilePath)) {
             file_put_contents($destinationFilePath, $yamlString);
         }
