@@ -7,7 +7,6 @@
 namespace eZ\Publish\Core\Repository\Tests\Service\Mock;
 
 use eZ\Publish\API\Repository\Repository;
-use eZ\Publish\Core\Repository\Permission\PermissionResolver;
 use eZ\Publish\Core\Repository\Values\User\UserReference;
 use eZ\Publish\Core\Base\Exceptions\NotFound\LimitationNotFoundException;
 use eZ\Publish\Core\Repository\Tests\Service\Mock\Base as BaseServiceMockTest;
@@ -20,6 +19,8 @@ use eZ\Publish\SPI\Persistence\User\Policy;
  */
 class PermissionTest extends BaseServiceMockTest
 {
+    use PermissionResolverMockTrait;
+
     public function providerForTestHasAccessReturnsTrue()
     {
         return array(
@@ -933,44 +934,6 @@ class PermissionTest extends BaseServiceMockTest
         );
     }
 
-    protected $permissionResolverMock;
-
-    /**
-     * @return \eZ\Publish\API\Repository\PermissionResolver|\PHPUnit_Framework_MockObject_MockObject
-     */
-    protected function getPermissionResolverMock($methods = [])
-    {
-        if ($this->permissionResolverMock === null) {
-            $this->permissionResolverMock = $this
-                ->getMockBuilder('eZ\\Publish\\Core\\Repository\\Permission\\PermissionResolver')
-                ->setMethods($methods)
-                ->setConstructorArgs(
-                    [
-                        $this->getRoleDomainMapperMock(),
-                        $this->getLimitationServiceMock(),
-                        $this->getPersistenceMock()->userHandler(),
-                        $this->getUserReferenceMock(),
-                    ]
-                )
-                ->getMock();
-        }
-
-        return $this->permissionResolverMock;
-    }
-
-    protected $userReferenceMock;
-
-    protected function getUserReferenceMock()
-    {
-        if ($this->userReferenceMock === null) {
-            $this->userReferenceMock = $this
-                ->getMockBuilder('eZ\Publish\API\Repository\Values\User\UserReference')
-                ->getMock();
-        }
-
-        return $this->userReferenceMock;
-    }
-
     protected $repositoryMock;
 
     /**
@@ -987,41 +950,5 @@ class PermissionTest extends BaseServiceMockTest
         }
 
         return $this->repositoryMock;
-    }
-
-    protected $roleDomainMapperMock;
-
-    /**
-     * @return \eZ\Publish\Core\Repository\Helper\RoleDomainMapper|\PHPUnit_Framework_MockObject_MockObject
-     */
-    protected function getRoleDomainMapperMock($methods = [])
-    {
-        if ($this->roleDomainMapperMock === null) {
-            $this->roleDomainMapperMock = $this
-                ->getMockBuilder('eZ\\Publish\\Core\\Repository\\Helper\\RoleDomainMapper')
-                ->setMethods($methods)
-                ->disableOriginalConstructor()
-                ->getMock();
-        }
-
-        return $this->roleDomainMapperMock;
-    }
-
-    protected $limitationServiceMock;
-
-    /**
-     * @return \eZ\Publish\Core\Repository\Helper\LimitationService|\PHPUnit_Framework_MockObject_MockObject
-     */
-    protected function getLimitationServiceMock($methods = [])
-    {
-        if ($this->limitationServiceMock === null) {
-            $this->limitationServiceMock = $this
-                ->getMockBuilder('eZ\\Publish\\Core\\Repository\\Helper\\LimitationService')
-                ->setMethods($methods)
-                ->disableOriginalConstructor()
-                ->getMock();
-        }
-
-        return $this->limitationServiceMock;
     }
 }
