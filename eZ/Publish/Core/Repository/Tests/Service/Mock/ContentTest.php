@@ -12,6 +12,7 @@ use eZ\Publish\API\Repository\Values\Content\Language;
 use eZ\Publish\API\Repository\Values\Content\LocationCreateStruct;
 use eZ\Publish\Core\Base\Exceptions\ContentFieldValidationException;
 use eZ\Publish\Core\Base\Exceptions\ContentValidationException;
+use eZ\Publish\Core\Repository\Repository;
 use eZ\Publish\Core\Repository\Tests\Service\Mock\Base as BaseServiceMockTest;
 use eZ\Publish\Core\Repository\ContentService;
 use eZ\Publish\Core\Repository\Values\Content\Location;
@@ -44,6 +45,8 @@ use Exception;
  */
 class ContentTest extends BaseServiceMockTest
 {
+    use PermissionResolverMockTrait;
+
     /**
      * Represents empty Field Value.
      */
@@ -5245,6 +5248,7 @@ class ContentTest extends BaseServiceMockTest
         $repository = $this->getRepositoryMock();
         $contentService = $this->getPartlyMockedContentService(array('internalLoadContentInfo'));
         $contentInfo = $this->getMock('eZ\\Publish\\API\\Repository\\Values\\Content\\ContentInfo');
+        $permissionResolverMock = $this->getPermissionResolverMock(['canUser']);
         $locationCreateStruct = new LocationCreateStruct();
         $location = new Location(['id' => $locationCreateStruct->parentLocationId]);
         $locationServiceMock = $this->getLocationServiceMock();
@@ -5267,7 +5271,7 @@ class ContentTest extends BaseServiceMockTest
             ->with('sectionId')
             ->will($this->returnValue(42));
 
-        $repository->expects($this->once())
+        $permissionResolverMock->expects($this->once())
             ->method('canUser')
             ->with(
                 'content',
@@ -5293,7 +5297,8 @@ class ContentTest extends BaseServiceMockTest
         $repositoryMock = $this->getRepositoryMock();
         $contentService = $this->getPartlyMockedContentService(array('internalLoadContentInfo', 'internalLoadContent'));
         $locationServiceMock = $this->getLocationServiceMock();
-        $contentInfoMock = $this->getMock('eZ\\Publish\\API\\Repository\\Values\\Content\\ContentInfo');
+        $contentInfoMock = $this->getMock(ContentInfo::class);
+        $permissionResolverMock = $this->getPermissionResolverMock(['canUser']);
         $locationCreateStruct = new LocationCreateStruct();
         $location = new Location(['id' => $locationCreateStruct->parentLocationId]);
 
@@ -5333,7 +5338,7 @@ class ContentTest extends BaseServiceMockTest
 
         $repositoryMock->expects($this->once())->method('beginTransaction');
         $repositoryMock->expects($this->once())->method('commit');
-        $repositoryMock->expects($this->once())
+        $permissionResolverMock->expects($this->once())
             ->method('canUser')
             ->with(
                 'content',
@@ -5397,6 +5402,7 @@ class ContentTest extends BaseServiceMockTest
         $contentService = $this->getPartlyMockedContentService(array('internalLoadContentInfo', 'internalLoadContent'));
         $locationServiceMock = $this->getLocationServiceMock();
         $contentInfoMock = $this->getMock('eZ\\Publish\\API\\Repository\\Values\\Content\\ContentInfo');
+        $permissionResolverMock = $this->getPermissionResolverMock(['canUser']);
         $locationCreateStruct = new LocationCreateStruct();
         $location = new Location(['id' => $locationCreateStruct->parentLocationId]);
 
@@ -5436,7 +5442,7 @@ class ContentTest extends BaseServiceMockTest
 
         $repositoryMock->expects($this->once())->method('beginTransaction');
         $repositoryMock->expects($this->once())->method('commit');
-        $repositoryMock->expects($this->once())
+        $permissionResolverMock->expects($this->once())
             ->method('canUser')
             ->with(
                 'content',
@@ -5502,6 +5508,7 @@ class ContentTest extends BaseServiceMockTest
         $contentService = $this->getPartlyMockedContentService();
         /** @var \PHPUnit_Framework_MockObject_MockObject $contentHandlerMock */
         $contentHandlerMock = $this->getPersistenceMock()->contentHandler();
+        $permissionResolverMock = $this->getPermissionResolverMock(['canUser']);
         $locationCreateStruct = new LocationCreateStruct();
         $location = new Location(['id' => $locationCreateStruct->parentLocationId]);
         $locationServiceMock = $this->getLocationServiceMock();
@@ -5527,7 +5534,7 @@ class ContentTest extends BaseServiceMockTest
 
         $repositoryMock->expects($this->once())->method('beginTransaction');
         $repositoryMock->expects($this->once())->method('rollback');
-        $repositoryMock->expects($this->once())
+        $permissionResolverMock->expects($this->once())
             ->method('canUser')
             ->with(
                 'content',
