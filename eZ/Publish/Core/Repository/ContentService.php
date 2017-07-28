@@ -1618,7 +1618,7 @@ class ContentService implements ContentServiceInterface
         $destinationLocation = $this->repository->getLocationService()->loadLocation(
             $destinationLocationCreateStruct->parentLocationId
         );
-        if (!$this->repository->canUser('content', 'create', $contentInfo, [$destinationLocation])) {
+        if (!$this->repository->getPermissionResolver()->canUser('content', 'create', $contentInfo, [$destinationLocation])) {
             throw new UnauthorizedException(
                 'content',
                 'create',
