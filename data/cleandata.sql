@@ -23,6 +23,7 @@ INSERT INTO `ezcobj_state_link` (`contentobject_id`, `contentobject_state_id`) V
 INSERT INTO `ezcobj_state_link` (`contentobject_id`, `contentobject_state_id`) VALUES (51,1);
 
 INSERT INTO `ezcontent_language` (`disabled`, `id`, `locale`, `name`) VALUES (0,2,'eng-GB','English (United Kingdom)');
+INSERT INTO `ezcontent_language` (`disabled`, `id`, `locale`, `name`) VALUES (0,4,'eng-US','English (United States)');
 
 INSERT INTO `ezcontentclass` (`always_available`, `contentobject_name`, `created`, `creator_id`, `id`, `identifier`, `initial_language_id`, `is_container`, `language_mask`, `modified`, `modifier_id`, `remote_id`, `serialized_description_list`, `serialized_name_list`, `sort_field`, `sort_order`, `url_alias_name`, `version`) VALUES (1,'<short_name|name>',1024392098,14,1,'folder',2,1,2,1448831672,14,'a3d405b81be900468eb153d774f4f0d2','b:0;','a:1:{s:6:\"eng-GB\";s:6:\"Folder\";}',1,1,NULL,0);
 INSERT INTO `ezcontentclass` (`always_available`, `contentobject_name`, `created`, `creator_id`, `id`, `identifier`, `initial_language_id`, `is_container`, `language_mask`, `modified`, `modifier_id`, `remote_id`, `serialized_description_list`, `serialized_name_list`, `sort_field`, `sort_order`, `url_alias_name`, `version`) VALUES (0,'<short_title|title>',1024392098,14,2,'article',2,1,3,1082454989,14,'c15b600eb9198b1924063b5a68758232',NULL,'a:2:{s:6:\"eng-GB\";s:7:\"Article\";s:16:\"always-available\";s:6:\"eng-GB\";}',1,1,NULL,0);
