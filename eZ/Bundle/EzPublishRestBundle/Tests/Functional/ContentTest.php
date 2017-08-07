@@ -198,6 +198,35 @@ XML;
     }
 
     /**
+     * Test translation removal from all the Content Object Versions.
+     *
+     * Covers <code>DELETE /content/objects/<contentId>/<languageCode></code>
+     */
+    public function testRemoveTranslation()
+    {
+        $href = $this->createMultiLanguageContent();
+
+        // BEGIN sanity check
+        $versionJSON = $this->loadVersionJSON($href, 1);
+        self::assertEquals('eng-GB,eng-US', $versionJSON['Version']['VersionInfo']['languageCodes']);
+        self::assertCount(2, $versionJSON['Version']['VersionInfo']['names']['value']);
+        self::assertEquals('AmE Multi Language Content', $versionJSON['Version']['VersionInfo']['names']['value'][1]['#text']);
+        // END sanity check
+
+        // delete translation
+        $response = $this->sendHttpRequest(
+            $this->createHttpRequest('DELETE', "{$href}/eng-US")
+        );
+        self::assertHttpResponseCodeEquals($response, 204);
+
+        // check removed translation no longer exists
+        $versionJSON = $this->loadVersionJSON($href, 1);
+        self::assertEquals('eng-GB', $versionJSON['Version']['VersionInfo']['languageCodes']);
+        self::assertCount(1, $versionJSON['Version']['VersionInfo']['names']['value']);
+        self::assertNotContains('AmE', $versionJSON['Version']['VersionInfo']['names']['value'][0]['#text']);
+    }
+
+    /**
      * Covers DELETE /content/objects/<versionNumber>.
      * @depends testCopyContent
      */
@@ -413,5 +442,92 @@ XML;
         // Returns 301 since 6.0 (deprecated in favour of /views)
         self::assertHttpResponseCodeEquals($response, 301);
         self::assertHttpResponseHasHeader($response, 'Location');
+    }
+
+    /**
+     * Create Content Object with translated fields.
+     *
+     * @todo Ensure that second language exists once there are necessary REST API endpoints.
+     *
+     * @return string
+     */
+    private function createMultiLanguageContent()
+    {
+        $request = $this->createHttpRequest(
+            'POST',
+            '/api/ezp/v2/content/objects',
+            'ContentCreate+xml',
+            'ContentInfo+json'
+        );
+        $name = 'Multi Language Content';
+        $modificationDate = date('c');
+        $body = <<< XML
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentCreate>
+  <ContentType href="/api/ezp/v2/content/types/1" />
+  <mainLanguageCode>eng-GB</mainLanguageCode>
+  <LocationCreate>
+    <ParentLocation href="/api/ezp/v2/content/locations/1/2" />
+    <priority>0</priority>
+    <hidden>false</hidden>
+    <sortField>PATH</sortField>
+    <sortOrder>ASC</sortOrder>
+  </LocationCreate>
+  <Section href="/api/ezp/v2/content/sections/1" />
+  <alwaysAvailable>true</alwaysAvailable>
+  <User href="/api/ezp/v2/user/users/14" />
+  <modificationDate>{$modificationDate}</modificationDate>
+  <fields>
+    <field>
+      <fieldDefinitionIdentifier>name</fieldDefinitionIdentifier>
+      <languageCode>eng-GB</languageCode>
+      <fieldValue>BrE {$name}</fieldValue>
+    </field>
+    <field>
+      <fieldDefinitionIdentifier>name</fieldDefinitionIdentifier>
+      <languageCode>eng-US</languageCode>
+      <fieldValue>AmE {$name}</fieldValue>
+    </field>
+  </fields>
+</ContentCreate>
+XML;
+        $request->setContent($body);
+
+        $response = $this->sendHttpRequest($request);
+
+        self::assertHttpResponseCodeEquals($response, 201);
+        self::assertHttpResponseHasHeader($response, 'Location');
+
+        $href = $response->getHeader('Location');
+        $this->addCreatedElement($href);
+
+        // publish created content
+        $response = $this->sendHttpRequest(
+            $this->createHttpRequest('PUBLISH', "{$href}/versions/1")
+        );
+        self::assertHttpResponseCodeEquals($response, 204);
+
+        return $href;
+    }
+
+    /**
+     * Get Content Object Versions XML as DOMDocument.
+     *
+     * @param string $contentObjectURI
+     *
+     * @return \DOMDocument
+     */
+    private function loadVersionJSON($contentObjectURI, $versionNo)
+    {
+        $request = $this->createHttpRequest(
+            'GET',
+            "{$contentObjectURI}/versions/{$versionNo}",
+            '',
+            'Version+json'
+        );
+        $response = $this->sendHttpRequest($request);
+        self::assertHttpResponseCodeEquals($response, 200);
+
+        return json_decode($response->getContent(), true);
     }
 }
