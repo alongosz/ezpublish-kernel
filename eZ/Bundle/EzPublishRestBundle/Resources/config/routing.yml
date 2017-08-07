@@ -95,6 +95,15 @@ ezpublish_rest_copyContent:
     requirements:
         contentId: \d+
 
+ezpublish_rest_deleteContentTranslation:
+    path: /content/objects/{contentId}/{languageCode}
+    defaults:
+        _controller: ezpublish_rest.controller.content:deleteContentTranslation
+    methods: [DELETE]
+    requirements:
+        contentId: \d+
+        languageCode: '[a-z]{3}-[A-Z]{2}'
+
 ezpublish_rest_redirectCurrentVersionRelations:
     path: /content/objects/{contentId}/relations
     defaults:

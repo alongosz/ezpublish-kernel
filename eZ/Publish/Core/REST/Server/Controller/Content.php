@@ -316,6 +316,24 @@ class Content extends RestController
     }
 
     /**
+     * Deletes a translation from all the Versions of the given Content Object.
+     *
+     * @param int $contentId
+     * @param string $languageCode
+     *
+     * @return \eZ\Publish\Core\REST\Server\Values\NoContent
+     */
+    public function deleteContentTranslation($contentId, $languageCode)
+    {
+        $this->repository->getContentService()->removeTranslation(
+            $this->repository->getContentService()->loadContentInfo($contentId),
+            $languageCode
+        );
+
+        return new Values\NoContent();
+    }
+
+    /**
      * Returns a list of all versions of the content. This method does not
      * include fields and relations in the Version elements of the response.
      *
