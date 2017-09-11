@@ -57,3 +57,35 @@ class RemoveTranslationSignal extends Signal
     public $languageCode;
 }
 ```
+
+## Removing the specific language translation from a Content Object Version
+
+For the cases of preserving Version history, PHP API introduces the `deleteTranslation` method
+on `ContentService` which removes the specific translation from the given Content Draft.
+
+**Note**: A PHP API Consumer is responsible for creating Content Draft and publishing it after
+translation removal.
+
+```php
+/**
+ * Delete specified Translation from a Content Draft.
+ *
+ * @throws \eZ\Publish\API\Repository\Exceptions\BadStateException if the specified Translation
+ *         is the only one the Content Draft has or it is the main Translation of a Content Object.
+ * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the user is not allowed
+ *         to edit the Content (in one of the locations of the given Content Object).
+ * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException if languageCode argument
+ *         is invalid for the given Draft.
+ *
+ * @param \eZ\Publish\API\Repository\Values\Content\VersionInfo $versionInfo Content Version Draft
+ * @param string $languageCode Language code of the Translation to be removed
+ *
+ * @return \eZ\Publish\API\Repository\Values\Content\Content Content Draft w/o the specified Translation
+ *
+ * @since 6.12
+ */
+public function deleteTranslation(VersionInfo $versionInfo, $languageCode);
+```
+
+Since the returned Content Draft is to be published, both Search and HttpCache are already handled
+by `PublishVersion` Slots once call to `publishVersion()` is made.
