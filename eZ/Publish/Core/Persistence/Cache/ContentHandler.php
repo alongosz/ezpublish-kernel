@@ -317,4 +317,27 @@ class ContentHandler extends AbstractHandler implements ContentHandlerInterface
         $this->cache->clear('content', $contentId);
         $this->cache->clear('content', 'info', $contentId);
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteTranslationFromVersion($contentId, $versionNo, $languageCode)
+    {
+        $this->logger->logCall(
+            __METHOD__,
+            ['content' => $contentId, 'version' => $versionNo, 'languageCode' => $languageCode]
+        );
+        $content = $this->persistenceHandler->contentHandler()->deleteTranslationFromVersion(
+            $contentId,
+            $versionNo,
+            $languageCode
+        );
+        $this->cache->clear('content', $contentId, $versionNo);
+        $this->cache
+            ->getItem('content', $contentId, $versionNo, self::ALL_TRANSLATIONS_KEY)
+            ->set($content)
+            ->save();
+
+        return $content;
+    }
 }
