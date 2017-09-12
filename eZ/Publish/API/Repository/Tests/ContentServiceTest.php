@@ -5368,6 +5368,25 @@ class ContentServiceTest extends BaseContentServiceTest
     }
 
     /**
+     * Test deleting a Translation from Draft.
+     */
+    public function testDeleteTranslation()
+    {
+        $repository = $this->getRepository();
+        $contentService = $repository->getContentService();
+
+        $languageCode = 'eng-GB';
+        $content = $this->createMultipleLanguageContentVersion2();
+        $draft = $contentService->createContentDraft($content->contentInfo);
+        $draft = $contentService->deleteTranslation($draft->versionInfo, $languageCode);
+        $content = $contentService->publishVersion($draft->versionInfo);
+
+        $loadedContent = $contentService->loadContent($content->id);
+        self::assertNotContains($languageCode, $loadedContent->versionInfo->languageCodes);
+        self::assertEmpty($loadedContent->getFieldsByLanguage($languageCode));
+    }
+
+    /**
      * Test for the newTranslationInfo() method.
      *
      * @covers \eZ\Publish\Core\Repository\ContentService::newTranslationInfo
