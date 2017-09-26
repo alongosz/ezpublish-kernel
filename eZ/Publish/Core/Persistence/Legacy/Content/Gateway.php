@@ -410,4 +410,14 @@ abstract class Gateway
      * @param string $languageCode
      */
     abstract public function deleteTranslationFromVersion($contentId, $versionNo, $languageCode);
+
+    /**
+     * Delete Content fields (attributes) for the given Translation.
+     * If $versionNo is given, fields for that Version only will be deleted.
+     *
+     * @param string $languageCode
+     * @param int $contentId
+     * @param int $versionNo (optional) filter by versionNo
+     */
+    abstract public function deleteTranslatedFields($languageCode, $contentId, $versionNo = null);
 }

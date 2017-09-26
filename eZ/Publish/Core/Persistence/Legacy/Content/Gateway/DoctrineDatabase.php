@@ -1961,7 +1961,8 @@ class DoctrineDatabase extends Gateway
             $this->deleteTranslationFromContentVersions($contentId, $language->id);
             $this->deleteTranslationFromContentObject($contentId, $language->id);
 
-            $this->deleteTranslationFromContentAttributes($contentId, $languageCode);
+            // @todo: move this to field handler when fixing EZP-27949
+            $this->deleteTranslatedFields($languageCode, $contentId);
             $this->deleteTranslationFromContentNames($contentId, $languageCode);
 
             $this->connection->commit();
@@ -1986,7 +1987,6 @@ class DoctrineDatabase extends Gateway
         $this->connection->beginTransaction();
         try {
             $this->deleteTranslationFromContentVersions($contentId, $language->id, $versionNo);
-            $this->deleteTranslationFromContentAttributes($contentId, $languageCode, $versionNo);
             $this->deleteTranslationFromContentNames($contentId, $languageCode, $versionNo);
 
             $this->connection->commit();
@@ -1997,13 +1997,14 @@ class DoctrineDatabase extends Gateway
     }
 
     /**
-     * Delete translation from the ezcontentobject_attribute table.
+     * Delete Content fields (attributes) for the given Translation.
+     * If $versionNo is given, fields for that Version only will be deleted.
      *
-     * @param int $contentId
      * @param string $languageCode
-     * @param int $versionNo optional, if specified, apply to this Version only.
+     * @param int $contentId
+     * @param int $versionNo (optional) filter by versionNo
      */
-    private function deleteTranslationFromContentAttributes($contentId, $languageCode, $versionNo = null)
+    public function deleteTranslatedFields($languageCode, $contentId, $versionNo = null)
     {
         $query = $this->connection->createQueryBuilder();
         $query
