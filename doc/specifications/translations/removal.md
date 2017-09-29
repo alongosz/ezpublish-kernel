@@ -77,6 +77,7 @@ translation removal.
  *         to edit the Content (in one of the locations of the given Content Object).
  * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException if languageCode argument
  *         is invalid for the given Draft.
+ * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException if specified Version was not found
  *
  * @param \eZ\Publish\API\Repository\Values\Content\VersionInfo $versionInfo Content Version Draft
  * @param string $languageCode Language code of the Translation to be removed
