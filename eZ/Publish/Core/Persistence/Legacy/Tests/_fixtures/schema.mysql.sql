@@ -1,3 +1,4 @@
+/*!40101 SET NAMES utf8 */;
 DROP TABLE IF EXISTS ezbinaryfile;
 CREATE TABLE ezbinaryfile (
   contentobject_attribute_id int(11) NOT NULL DEFAULT 0,
