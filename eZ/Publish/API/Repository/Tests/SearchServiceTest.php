@@ -1598,6 +1598,17 @@ class SearchServiceTest extends BaseTest
                 ),
                 $fixtureDir . 'SortDesc.php',
             ),
+            array(
+                array(
+                    'filter' => new Criterion\SectionId(array(1)),
+                    'offset' => 0,
+                    'limit' => 10,
+                    'sortClauses' => array(
+                        new SortClause\ContentName(Query::SORT_ASC),
+                    ),
+                ),
+                $fixtureDir . 'SortContentNameWithAccent.php',
+            ),
         );
     }
 
@@ -2486,6 +2497,22 @@ class SearchServiceTest extends BaseTest
      */
     public function testFindAndSortLocations($queryData, $fixture, $closure = null)
     {
+        // prepare extra data
+        $repository = $this->getRepository();
+        $contentService = $repository->getContentService();
+        $locationService = $repository->getLocationService();
+        $contentTypeService = $repository->getContentTypeService();
+
+        $contentCreateStruct = $contentService->newContentCreateStruct(
+            $contentTypeService->loadContentTypeByIdentifier('folder'),
+            'eng-GB'
+        );
+        $contentCreateStruct->setField('name', 'Écoconception Web');
+        $contentCreateStruct->sectionId = 1;
+        $draft = $contentService->createContent($contentCreateStruct, [$locationService->newLocationCreateStruct(2)]);
+        $contentService->publishVersion($draft->versionInfo);
+        $this->refreshSearch($repository);
+
         $query = new LocationQuery($queryData);
         $this->assertQueryFixture($query, $fixture, $closure);
     }
