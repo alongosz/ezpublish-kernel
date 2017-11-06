@@ -1,5 +1,6 @@
 # eZ Platform Kernel (a.k.a. *eZ Publish 6.x kernel*)
-[![Build Status](https://img.shields.io/travis/ezsystems/ezpublish-kernel.svg?style=flat-square&branch=master)](https://travis-ci.org/ezsystems/ezpublish-kernel)
+[![Build Status](https://travis-ci.org/ezsystems/ezpublish-kernel.png?branch=master)](https://travis-ci.org/ezsystems/ezpublish-kernel)
+[![Code Climate](https://img.shields.io/codeclimate/github/ezsystems/ezpublish-kernel.svg?style=flat-square)](https://codeclimate.com/github/ezsystems/ezpublish-kernel)
 [![Downloads](https://img.shields.io/packagist/dt/ezsystems/ezpublish-kernel.svg?style=flat-square)](https://packagist.org/packages/ezsystems/ezpublish-kernel)
 [![Latest version](https://img.shields.io/github/release/ezsystems/ezpublish-kernel.svg?style=flat-square)](https://github.com/ezsystems/ezpublish-kernel/releases)
 [![License](https://img.shields.io/packagist/l/ezsystems/ezpublish-kernel.svg?style=flat-square)](LICENSE)
