@@ -8,7 +8,10 @@
  */
 namespace eZ\Publish\API\Repository\Tests\SetupFactory;
 
+use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Schema\Schema;
 use eZ\Publish\Core\Base\ServiceContainer;
+use eZ\Publish\Core\Persistence\Schema\YamlSchemaParser;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use eZ\Publish\API\Repository\Tests\SetupFactory;
 use eZ\Publish\API\Repository\Tests\IdManager;
@@ -331,9 +334,19 @@ class Legacy extends SetupFactory
      */
     protected function getSchemaStatements()
     {
-        $schemaPath = __DIR__ . '/../../../../Core/Persistence/Legacy/Tests/_fixtures/schema.' . self::$db . '.sql';
+        $connectionParams = ['url' => 'mysql://root:root@localhost/demo_ezplatform_clean'];
 
-        return array_filter(preg_split('(;\\s*$)m', file_get_contents($schemaPath)));
+        $connection = DriverManager::getConnection($connectionParams);
+
+        $schema = $connection->getSchemaManager()->createSchema();
+
+        //$yamlSchemaFilePath = __DIR__ . '/../../../../../Bundle/EzPublishCoreBundle/Resources/schema/schema.yml';
+        //$schemaParser = new YamlSchemaParser();
+        //$yamlSchema = $schemaParser->getYamlSchema($connection->getSchemaManager()->createSchema());
+        //die($yamlSchema);
+        //$schema = $schemaParser->parseSchemaFile($yamlSchemaFilePath);
+
+        return $schema->toSql($this->getDatabaseHandler()->getConnection()->getDatabasePlatform());
     }
 
     /**
