@@ -38,6 +38,7 @@ class RichText extends AbstractFieldTypeParser
     {
         $nodeBuilder
             ->arrayNode('output_custom_tags')
+                ->setDeprecated('DEPRECATED. Configure custom tags using custom_tags node')
                 ->info('Custom XSL stylesheets to use for RichText transformation to HTML5. Useful for "custom tags".')
                 ->example(
                     array(
@@ -59,6 +60,7 @@ class RichText extends AbstractFieldTypeParser
                 ->end()
             ->end()
             ->arrayNode('edit_custom_tags')
+                ->setDeprecated('DEPRECATED. Configure custom tags using custom_tags node')
                 ->info('Custom XSL stylesheets to use for RichText transformation to HTML5. Useful for "custom tags".')
                 ->example(
                     array(
@@ -80,6 +82,7 @@ class RichText extends AbstractFieldTypeParser
                 ->end()
             ->end()
             ->arrayNode('input_custom_tags')
+                ->setDeprecated('DEPRECATED. Configure custom tags using custom_tags node')
                 ->info('Custom XSL stylesheets to use for RichText transformation to HTML5. Useful for "custom tags".')
                 ->example(
                     array(
