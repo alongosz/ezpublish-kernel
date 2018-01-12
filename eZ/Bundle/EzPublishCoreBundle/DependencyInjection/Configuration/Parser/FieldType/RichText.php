@@ -9,6 +9,7 @@
 namespace eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Configuration\Parser\FieldType;
 
 use eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Configuration\Parser\AbstractFieldTypeParser;
+use eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Configuration\SiteAccessAware\Contextualizer;
 use eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Configuration\SiteAccessAware\ContextualizerInterface;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 use Symfony\Component\Config\Definition\Builder\ScalarNodeDefinition;
@@ -311,6 +312,46 @@ class RichText extends AbstractFieldTypeParser
         $contextualizer->mapConfigArray('fieldtypes.ezrichtext.output_custom_xsl', $config);
         $contextualizer->mapConfigArray('fieldtypes.ezrichtext.edit_custom_xsl', $config);
         $contextualizer->mapConfigArray('fieldtypes.ezrichtext.input_custom_xsl', $config);
+        $contextualizer->mapConfigArray('fieldtypes.ezrichtext.custom_tags', $config);
+
+        $this->mapCustomTagSettingsFromAllScopes($config['system'], $contextualizer);
+    }
+
+    /**
+     * Merge RichText Custom Tag settings from all scopes into one array.
+     *
+     * @param array $systemConfig
+     */
+    private function mapCustomTagSettingsFromAllScopes(array $systemConfig, ContextualizerInterface $contextualizer)
+    {
+        // merge Custom Tags from all scopes into one array
+        $customTags = [];
+        foreach ($systemConfig as $scope => $settings) {
+            if (isset($settings['fieldtypes']['ezrichtext']['custom_tags'])) {
+                $customTags = array_merge($customTags, $settings['fieldtypes']['ezrichtext']['custom_tags']);
+            }
+        }
+
+        if (empty($customTags)) {
+            return;
+        }
+
+        // propagate merged settings to all scopes
+        foreach (array_keys($systemConfig) as $scope) {
+            $contextualizer->setContextualParameter(
+                'fieldtypes.ezrichtext.custom_tags',
+                $scope,
+                $customTags
+            );
+            // make each custom tag available as parameter as well
+            foreach ($customTags as $customTag => $customTagSettings) {
+                $contextualizer->setContextualParameter(
+                    "fieldtypes.ezrichtext.custom_tags.{$customTag}",
+                    $scope,
+                    $customTagSettings
+                );
+            }
+        }
     }
 
     /**
