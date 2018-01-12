@@ -192,6 +192,81 @@ class RichTextTest extends AbstractParserTestCase
                     ],
                 ],
             ],
+            [
+                [
+                    'fieldtypes' => [
+                        'ezrichtext' => [
+                            'custom_tags' => [
+                                'ezyoutube' => [
+                                    'attributes' => [
+                                        'title' => [
+                                            'type' => 'string',
+                                            'required' => true,
+                                            'default_value' => '',
+                                        ],
+                                        'inline' => [
+                                            'type' => 'boolean',
+                                            'required' => false,
+                                            'default_value' => true,
+                                        ],
+                                        'limit' => [
+                                            'type' => 'number',
+                                            'required' => true,
+                                            'default_value' => 5,
+                                        ],
+                                        'cssClass' => [
+                                            'type' => 'choice',
+                                            'required' => false,
+                                            'default_value' => '',
+                                            'choices' => [
+                                                'super-class',
+                                                'extra-class',
+                                                'super-extra-class',
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'fieldtypes.ezrichtext.custom_tags' => [
+                        'ezyoutube' => [
+                            'attributes' => [
+                                'title' => [
+                                    'type' => 'string',
+                                    'required' => true,
+                                    'default_value' => '',
+                                    'choices' => [],
+                                ],
+                                'inline' => [
+                                    'type' => 'boolean',
+                                    'required' => false,
+                                    'default_value' => true,
+                                    'choices' => [],
+                                ],
+                                'limit' => [
+                                    'type' => 'number',
+                                    'required' => true,
+                                    'default_value' => 5,
+                                    'choices' => [],
+                                ],
+                                'cssClass' => [
+                                    'type' => 'choice',
+                                    'required' => false,
+                                    'default_value' => '',
+                                    'choices' => [
+                                        'super-class',
+                                        'extra-class',
+                                        'super-extra-class',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
         ];
     }
 }
