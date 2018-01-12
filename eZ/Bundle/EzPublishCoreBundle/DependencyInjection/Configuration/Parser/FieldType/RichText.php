@@ -243,6 +243,8 @@ class RichText extends AbstractFieldTypeParser
                     ->end()
                 ->end()
             ->end();
+
+        $this->addFieldTypeSemanticConfigForCustomTags($nodeBuilder);
     }
 
     /**
@@ -309,5 +311,61 @@ class RichText extends AbstractFieldTypeParser
         $contextualizer->mapConfigArray('fieldtypes.ezrichtext.output_custom_xsl', $config);
         $contextualizer->mapConfigArray('fieldtypes.ezrichtext.edit_custom_xsl', $config);
         $contextualizer->mapConfigArray('fieldtypes.ezrichtext.input_custom_xsl', $config);
+    }
+
+    /**
+     * Add semantic config for RichText custom tags.
+     *
+     * @param NodeBuilder $nodeBuilder
+     *
+     * @since 7.1
+     */
+    private function addFieldTypeSemanticConfigForCustomTags(NodeBuilder $nodeBuilder)
+    {
+        $nodeBuilder
+            ->arrayNode('custom_tags')
+                ->arrayPrototype()
+                    ->children()
+                        ->arrayNode('attributes')
+                            ->isRequired()
+                            ->arrayPrototype()
+                                ->validate()
+                                    ->ifTrue(
+                                        function ($v) {
+                                            return $v['type'] === 'choice' && empty($v['choices']);
+                                        }
+                                    )
+                                    ->thenInvalid('Choice type has to define choices list')
+                                ->end()
+                                ->validate()
+                                    ->ifTrue(
+                                        function ($v) {
+                                            return $v['type'] !== 'choice' && !empty($v['choices']);
+                                        }
+                                    )
+                                    ->thenInvalid('List of choices is supported by choices type only.')
+                                ->end()
+                                ->children()
+                                    ->enumNode('type')
+                                        ->isRequired()
+                                        ->values(['number', 'string', 'boolean', 'choice'])
+                                    ->end()
+                                    ->booleanNode('required')
+                                        ->defaultFalse()
+                                    ->end()
+                                    ->scalarNode('default_value')
+                                    ->end()
+                                    ->arrayNode('choices')
+                                        ->scalarPrototype()
+                                    ->end()
+                                    ->variableNode('options')
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
     }
 }
