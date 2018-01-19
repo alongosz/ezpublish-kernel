@@ -47,6 +47,7 @@ use eZ\Bundle\EzPublishCoreBundle\DependencyInjection\EzPublishCoreExtension;
 use eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Configuration\Parser as ConfigParser;
 use eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Security\HttpBasicFactory;
 use eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Compiler\URLHandlerPass;
+use eZ\Publish\Core\FieldType\RichText\DependencyInjection\Configuration\RichTextConfigurationHook;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\EventDispatcher\DependencyInjection\RegisterListenersPass;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
@@ -131,7 +132,10 @@ class EzPublishCoreBundle extends Bundle
                     new ConfigParser\Languages(),
                     new ConfigParser\IO(new ComplexSettingParser()),
                     new ConfigParser\UrlChecker(),
-                )
+                ),
+                [
+                    new RichTextConfigurationHook(),
+                ]
             );
 
             $this->extension->addPolicyProvider(new RepositoryPolicyProvider());
