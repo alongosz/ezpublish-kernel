@@ -45,6 +45,11 @@ class EzPublishCoreExtension extends Extension implements PrependExtensionInterf
     private $configParsers;
 
     /**
+     * @var \eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Configuration\CustomConfigurationHook[]
+     */
+    private $customConfigurationHooks;
+
+    /**
      * @var PolicyProviderInterface[]
      */
     private $policyProviders = [];
@@ -62,9 +67,16 @@ class EzPublishCoreExtension extends Extension implements PrependExtensionInterf
      */
     private $siteaccessConfigurationFilters = [];
 
-    public function __construct(array $configParsers = array())
-    {
+    /**
+     * @param \eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Configuration\ParserInterface[] $configParsers
+     * @param \eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Configuration\CustomConfigurationHook[] $customConfigurationHooks
+     */
+    public function __construct(
+        array $configParsers = array(),
+        array $customConfigurationHooks = []
+    ) {
         $this->configParsers = $configParsers;
+        $this->customConfigurationHooks = $customConfigurationHooks;
         $this->suggestionCollector = new SuggestionCollector();
     }
 
@@ -129,6 +141,9 @@ class EzPublishCoreExtension extends Extension implements PrependExtensionInterf
         // Map settings
         $processor = new ConfigurationProcessor($container, 'ezsettings');
         $processor->mapConfig($config, $this->getMainConfigParser());
+        foreach ($this->customConfigurationHooks as $customConfigurationHook) {
+            $customConfigurationHook->mapConfig($config, $container);
+        }
 
         if ($this->suggestionCollector->hasSuggestions()) {
             $message = '';
@@ -152,7 +167,11 @@ class EzPublishCoreExtension extends Extension implements PrependExtensionInterf
      */
     public function getConfiguration(array $config, ContainerBuilder $container)
     {
-        $configuration = new Configuration($this->getMainConfigParser(), $this->suggestionCollector);
+        $configuration = new Configuration(
+            $this->getMainConfigParser(),
+            $this->suggestionCollector,
+            $this->customConfigurationHooks
+        );
         $configuration->setSiteAccessConfigurationFilters($this->siteaccessConfigurationFilters);
 
         return $configuration;

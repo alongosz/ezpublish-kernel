@@ -22,6 +22,11 @@ class Configuration extends SiteAccessConfiguration
     private $mainConfigParser;
 
     /**
+     * @var \eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Configuration\CustomConfigurationHook[]
+     */
+    private $customConfigurationHooks;
+
+    /**
      * @var Configuration\Suggestion\Collector\SuggestionCollectorInterface
      */
     private $suggestionCollector;
@@ -30,10 +35,14 @@ class Configuration extends SiteAccessConfiguration
      */
     private $siteAccessConfigurationFilters;
 
-    public function __construct(ParserInterface $mainConfigParser, SuggestionCollectorInterface $suggestionCollector)
-    {
+    public function __construct(
+        ParserInterface $mainConfigParser,
+        SuggestionCollectorInterface $suggestionCollector,
+        array $customConfigurationHooks = []
+    ) {
         $this->suggestionCollector = $suggestionCollector;
         $this->mainConfigParser = $mainConfigParser;
+        $this->customConfigurationHooks = $customConfigurationHooks;
     }
 
     public function setSiteAccessConfigurationFilters(array $filters)
@@ -60,6 +69,8 @@ class Configuration extends SiteAccessConfiguration
 
         // Delegate SiteAccess config to configuration parsers
         $this->mainConfigParser->addSemanticConfig($this->generateScopeBaseNode($rootNode));
+
+        $this->addCustomSections($rootNode);
 
         return $treeBuilder;
     }
@@ -463,5 +474,26 @@ EOT;
                     ->info('Router related settings')
                 ->end()
             ->end();
+    }
+
+    /**
+     * Delegate custom sections configurations to CustomConfigurationHooks.
+     *
+     * @see \eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Configuration\CustomConfigurationHook
+     *
+     * @param \Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition $rootNode
+     */
+    private function addCustomSections(ArrayNodeDefinition $rootNode)
+    {
+        foreach ($this->customConfigurationHooks as $customConfigurationHook) {
+            $customNode = $rootNode
+                ->children()
+                    ->arrayNode($customConfigurationHook->getCustomNodeName())
+                        ->children()
+            ;
+            $customConfigurationHook->addSemanticConfig($customNode);
+
+            $customNode->end()->end()->end();
+        }
     }
 }
