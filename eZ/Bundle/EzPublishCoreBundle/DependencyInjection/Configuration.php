@@ -566,8 +566,6 @@ EOT;
                                             ->ifEmpty()->thenUnset()
                                         ->end()
                                     ->end()
-                                    ->variableNode('options')
-                                    ->end()
                                 ->end()
                             ->end()
                         ->end()
