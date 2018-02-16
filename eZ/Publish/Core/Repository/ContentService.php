@@ -1224,7 +1224,7 @@ class ContentService implements ContentServiceInterface
                             'empty'
                         );
                     }
-                } else {
+                } elseif ($isFieldUpdated) {
                     $fieldErrors = $fieldType->validate(
                         $fieldDefinition,
                         $fieldValue

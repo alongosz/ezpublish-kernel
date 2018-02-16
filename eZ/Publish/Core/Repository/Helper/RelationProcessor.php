@@ -8,6 +8,7 @@
  */
 namespace eZ\Publish\Core\Repository\Helper;
 
+use eZ\Publish\API\Repository\Exceptions\NotFoundException;
 use eZ\Publish\SPI\Persistence\Handler;
 use eZ\Publish\API\Repository\Values\ContentType\ContentType;
 use eZ\Publish\Core\Repository\Values\Content\Relation;
@@ -70,12 +71,16 @@ class RelationProcessor
 
                 if (isset($destinationIds['locationIds'])) {
                     foreach ($destinationIds['locationIds'] as $locationId) {
-                        if (!isset($locationIdToContentIdMapping[$locationId])) {
-                            $location = $this->persistenceHandler->locationHandler()->load($locationId);
-                            $locationIdToContentIdMapping[$locationId] = $location->contentId;
-                        }
+                        try {
+                            if (!isset($locationIdToContentIdMapping[$locationId])) {
+                                $location = $this->persistenceHandler->locationHandler()->load($locationId);
+                                $locationIdToContentIdMapping[$locationId] = $location->contentId;
+                            }
 
-                        $relations[$relationType][$locationIdToContentIdMapping[$locationId]] = true;
+                            $relations[$relationType][$locationIdToContentIdMapping[$locationId]] = true;
+                        } catch(NotFoundException $e) {
+                            // Ignore missing relation
+                        }
                     }
                 }
 
