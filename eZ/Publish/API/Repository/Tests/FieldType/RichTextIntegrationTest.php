@@ -618,6 +618,71 @@ EOT;
         );
     }
 
+    /**
+     * Test updating Content which contains links to deleted Location.
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\BadStateException
+     * @throws \eZ\Publish\API\Repository\Exceptions\ContentFieldValidationException
+     * @throws \eZ\Publish\API\Repository\Exceptions\ContentValidationException
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     */
+    public function testInternalLinkValidatorHandlesMissingRelation()
+    {
+        $repository = $this->getRepository();
+        $contentService = $repository->getContentService();
+        $locationService = $repository->getLocationService();
+
+        $contentType = $this->testCreateContentType();
+
+        $contentA = $contentService->publishVersion(
+            $this->createContent($this->getValidCreationFieldData(), $contentType)->versionInfo
+        );
+        // create Main Location
+        $locationService->createLocation(
+            $contentA->contentInfo,
+            $locationService->newLocationCreateStruct(2)
+        );
+        $secondaryLocationA = $locationService->createLocation(
+            $contentA->contentInfo,
+            $locationService->newLocationCreateStruct(60)
+        );
+
+        $contentBFieldData = new DOMDocument();
+        $contentBFieldData->loadXML(<<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ezxhtml="http://ez.no/xmlns/ezpublish/docbook/xhtml" xmlns:ezcustom="http://ez.no/xmlns/ezpublish/docbook/custom" version="5.0-variant ezpublish-1.0">
+    <para><link xlink:href="ezlocation://{$secondaryLocationA->id}" xlink:show="none">link1</link></para>
+</section>
+XML
+        );
+
+        // create new Content explicitly due to remoteId duplication issue in createContent wrapper
+        $createStruct = $contentService->newContentCreateStruct($contentType, 'eng-US');
+        $createStruct->setField('name', 'Another content');
+        $createStruct->setField('data', new RichTextValue($contentBFieldData));
+
+        $contentB = $contentService->publishVersion(
+            $contentService->createContent(
+                $createStruct,
+                [$locationService->newLocationCreateStruct(2)]
+            )->versionInfo
+        );
+
+        $locationService->deleteLocation($secondaryLocationA);
+
+        // update field to trigger validation
+        $contentUpdateStruct = $contentService->newContentUpdateStruct();
+        $contentUpdateStruct->setField('name', 'Updated name');
+
+        $contentDraftB = $contentService->updateContent(
+            $contentService->createContentDraft($contentB->contentInfo)->versionInfo,
+            $contentUpdateStruct
+        );
+
+        $contentService->publishVersion($contentDraftB->versionInfo);
+    }
+
     protected function checkSearchEngineSupport()
     {
         if (ltrim(get_class($this->getSetupFactory()), '\\') === 'eZ\\Publish\\API\\Repository\\Tests\\SetupFactory\\Legacy') {
