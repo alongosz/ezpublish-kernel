@@ -667,14 +667,7 @@ EOT;
             $invalidXmlDocument = $this->createDocument($xmlDocumentPath);
             $this->createContent(new RichTextValue($invalidXmlDocument));
         } catch (ContentFieldValidationException $e) {
-            // get first nested ValidationError
-            /** @var \eZ\Publish\SPI\FieldType\ValidationError $error */
-            $error = current(current(current($e->getFieldErrors())));
-
-            self::assertEquals(
-                $expectedValidationMessage,
-                $error->getTranslatableMessage()->message
-            );
+            $this->assertValidationErrorOccurs($e, $expectedValidationMessage);
 
             return;
         }
@@ -683,28 +676,13 @@ EOT;
     }
 
     /**
-     * Data provider for testCreateContentWithInvalidCustomTag.
-     *
-     * @return array
+     * Test disabling validation of RichText Custom Tags for BC.
      */
-    public function providerForTestCreateContentWithInvalidCustomTag()
+    public function testCreateContentWithInvalidCustomTagAndDisabledValidation()
     {
-        $data = [
-            [
-                __DIR__ . '/_fixtures/ezrichtext/custom_tags/invalid/unknown_tag.xml',
-                "Unknown RichText Custom Tag 'unknown_tag'",
-            ],
-            [
-                __DIR__ . '/_fixtures/ezrichtext/custom_tags/invalid/equation.xml',
-                "The attribute 'processor' of RichText Custom Tag 'equation' cannot be empty",
-            ],
-            [
-                __DIR__ . '/_fixtures/ezrichtext/custom_tags/invalid/video.xml',
-                "Unknown attribute 'unknown_attribute' of RichText Custom Tag 'video'",
-            ],
-        ];
-
-        return $data;
+        $xmlDocumentPath = __DIR__ . '/_fixtures/ezrichtext/custom_tags/invalid/unknown_tag.xml';
+        $invalidXmlDocument = $this->createDocument($xmlDocumentPath);
+        $this->createContent(new RichTextValue($invalidXmlDocument));
     }
 
     /**

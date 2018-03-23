@@ -51,7 +51,7 @@ class Type extends FieldType
     protected $internalLinkValidator;
 
     /**
-     * @var null|\eZ\Publish\Core\FieldType\RichText\CustomTagsValidator
+     * @var null|\eZ\Publish\Core\FieldType\RichText\Validator\CustomTagsValidator
      */
     private $customTagsValidator;
 
@@ -61,7 +61,7 @@ class Type extends FieldType
      * @param null|\eZ\Publish\Core\FieldType\RichText\Normalizer $inputNormalizer
      * @param null|\eZ\Publish\Core\FieldType\RichText\ValidatorDispatcher $inputValidatorDispatcher
      * @param null|\eZ\Publish\Core\FieldType\RichText\InternalLinkValidator $internalLinkValidator
-     * @param null|\eZ\Publish\Core\FieldType\RichText\CustomTagsValidator $customTagsValidator
+     * @param null|\eZ\Publish\Core\FieldType\RichText\Validator\CustomTagsValidator $customTagsValidator
      */
     public function __construct(
         Validator $internalFormatValidator,
@@ -69,7 +69,7 @@ class Type extends FieldType
         Normalizer $inputNormalizer = null,
         ValidatorDispatcher $inputValidatorDispatcher = null,
         InternalLinkValidator $internalLinkValidator = null,
-        CustomTagsValidator $customTagsValidator = null
+        Validator\CustomTagsValidator $customTagsValidator = null
     ) {
         $this->internalFormatValidator = $internalFormatValidator;
         $this->inputConverterDispatcher = $inputConverterDispatcher;

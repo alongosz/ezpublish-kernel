@@ -28,6 +28,8 @@ class EzPublishCoreExtension extends Extension
 {
     const RICHTEXT_CUSTOM_TAGS_PARAMETER = 'ezplatform.ezrichtext.custom_tags';
 
+    const RICHTEXT_VALIDATE_CUSTOM_TAGS_PARAMETER = 'ezplatform.ezrichtext.features.enable_custom_tags_validation';
+
     /**
      * @var \eZ\Bundle\EzPublishCoreBundle\DependencyInjection\Configuration\Suggestion\Collector\SuggestionCollector
      */
@@ -294,6 +296,13 @@ class EzPublishCoreExtension extends Extension
                 static::RICHTEXT_CUSTOM_TAGS_PARAMETER,
                 $config['ezrichtext']['custom_tags']
             );
+
+            if (isset($config['ezrichtext']['features']['enable_custom_tags_validation'])) {
+                $container->setParameter(
+                    static::RICHTEXT_VALIDATE_CUSTOM_TAGS_PARAMETER,
+                    $config['ezrichtext']['features']['enable_custom_tags_validation']
+                );
+            }
         }
     }
 

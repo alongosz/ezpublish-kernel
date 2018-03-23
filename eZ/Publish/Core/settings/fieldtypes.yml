@@ -413,7 +413,7 @@ services:
             - "@ezpublish.fieldType.ezrichtext.normalizer.input"
             - "@ezpublish.fieldType.ezrichtext.validator.input.dispatcher"
             - '@ezpublish.fieldType.ezrichtext.validator.internal_link'
-            - '@eZ\Publish\Core\FieldType\RichText\CustomTagsValidator'
+            - '@eZ\Publish\Core\FieldType\RichText\Validator\CustomTagsValidator'
         tags:
             - {name: ezpublish.fieldType, alias: ezrichtext}
 

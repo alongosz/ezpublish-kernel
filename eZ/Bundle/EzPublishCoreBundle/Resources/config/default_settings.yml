@@ -22,6 +22,7 @@ parameters:
 
     # Rich Text Custom Tags global configuration
     ezplatform.ezrichtext.custom_tags: {}
+    ezplatform.ezrichtext.features.enable_custom_tags_validation: true
     # Rich Text Custom Tags default scope (for SiteAccess) configuration
     ezsettings.default.fieldtypes.ezrichtext.custom_tags: []
 

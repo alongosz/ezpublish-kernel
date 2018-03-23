@@ -6,7 +6,7 @@
  * @copyright Copyright (C) eZ Systems AS. All rights reserved.
  * @license For full copyright and license information view LICENSE file distributed with this source code.
  */
-namespace eZ\Publish\Core\FieldType\RichText;
+namespace eZ\Publish\Core\FieldType\RichText\Validator;
 
 use DOMDocument;
 use DOMXPath;
@@ -17,7 +17,7 @@ use DOMXPath;
  * The Validator checks if the given XML reflects proper Custom Tags configuration,
  * mostly existence of specific Custom Tag and its required attributes.
  */
-class CustomTagsValidator
+class CustomTagsValidator implements XmlValidator
 {
     /**
      * Custom Tags global configuration (ezpublish.ezrichtext.custom_tags Semantic Config).
@@ -41,7 +41,7 @@ class CustomTagsValidator
      *
      * @return string[] an array of error messages
      */
-    public function validateDocument(DOMDocument $xmlDocument)
+    public function validateDocument(DOMDocument $xmlDocument): array
     {
         $errors = [];
 

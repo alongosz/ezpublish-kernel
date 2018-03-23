@@ -477,9 +477,12 @@ EOT;
      */
     private function addRichTextSection(ArrayNodeDefinition $rootNode)
     {
-        $this->addCustomTagsSection(
-            $rootNode->children()->arrayNode('ezrichtext')->children()
-        )->end()->end()->end();
+        $eZRichTextNode = $rootNode->children()->arrayNode('ezrichtext')->children();
+
+        $this->addRichTextFeaturesSection($eZRichTextNode);
+        $this->addCustomTagsSection($eZRichTextNode);
+
+        $eZRichTextNode->end()->end()->end();
     }
 
     /**
@@ -563,6 +566,34 @@ EOT;
                                 ->end()
                             ->end()
                         ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * Define RichText Features Semantic Configuration.
+     *
+     * The configuration is available at:
+     * <code>
+     * ezpublish:
+     *     ezrichtext:
+     *         features:
+     * </code>
+     *
+     * @param \Symfony\Component\Config\Definition\Builder\NodeBuilder $eZRichTextNode
+     *
+     * @return \Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition
+     */
+    private function addRichTextFeaturesSection(NodeBuilder $eZRichTextNode)
+    {
+        return $eZRichTextNode
+            ->arrayNode('features')
+                ->children()
+                    ->booleanNode('enable_custom_tags_validation')
+                        ->isRequired()
+                        ->defaultTrue()
                     ->end()
                 ->end()
             ->end()

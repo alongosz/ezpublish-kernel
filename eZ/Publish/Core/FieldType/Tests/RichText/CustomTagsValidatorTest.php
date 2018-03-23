@@ -9,7 +9,7 @@
 namespace eZ\Publish\Core\FieldType\Tests\RichText;
 
 use DOMDocument;
-use eZ\Publish\Core\FieldType\RichText\CustomTagsValidator;
+use eZ\Publish\Core\FieldType\RichText\Validator\CustomTagsValidator;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
 
@@ -21,7 +21,7 @@ use Symfony\Component\Yaml\Yaml;
 class CustomTagsValidatorTest extends TestCase
 {
     /**
-     * @var CustomTagsValidator
+     * @var \eZ\Publish\Core\FieldType\RichText\Validator\CustomTagsValidator
      */
     private $validator;
 
