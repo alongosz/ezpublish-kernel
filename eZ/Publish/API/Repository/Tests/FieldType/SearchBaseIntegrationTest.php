@@ -280,6 +280,64 @@ abstract class SearchBaseIntegrationTest extends BaseIntegrationTest
         );
     }
 
+    protected function supportsSearchingForEmptyValueWithFieldCriterion()
+    {
+        return true;
+    }
+
+    public function testSearchingForEmptyValueWithFieldCriterion()
+    {
+        if (!$this->supportsSearchingForEmptyValueWithFieldCriterion()) {
+            $this->markTestSkipped("Field type '{$this->getTypeName()}' does not support searching for empty values using Field Criterion.");
+        }
+
+        $this->checkSearchEngineSupport();
+
+        $repository = $this->getRepository();
+        $fieldTypeService = $repository->getFieldTypeService();
+        $fieldType = $fieldTypeService->getFieldType($this->getTypeName());
+
+        if (!$fieldType->isSearchable()) {
+            $this->markTestSkipped("Field type '{$this->getTypeName()}' is not searchable.");
+        }
+
+        $contentType = $this->testCreateContentType();
+        $searchService = $repository->getSearchService();
+
+        $emptyValue = $fieldType->getEmptyValue();
+        $this->createTestSearchContent(
+            $emptyValue,
+            $repository,
+            $contentType
+        );
+
+        $this->refreshSearch($repository);
+
+        $query = new Query(
+            [
+                'filter' => new Criterion\LogicalAnd(
+                    [
+                        new Criterion\ContentTypeIdentifier($contentType->identifier),
+                        new Criterion\Field('data', Operator::EQ, $emptyValue),
+                    ]
+                ),
+            ]
+        );
+
+        /*        $connection = $this->getSetupFactory()->getServiceContainer()->get('ezpublish.persistence.connection');
+                $connection
+                    ->getConfiguration()
+                    ->setSQLLogger(new \Doctrine\DBAL\Logging\EchoSQLLogger());*/
+
+        $searchResults = $searchService->findContent($query);
+
+        /*        $connection
+                    ->getConfiguration()
+                    ->setSQLLogger(null);*/
+
+        self::assertEquals(1, $searchResults->totalCount);
+    }
+
     /**
      * Creates test Content and Locations and returns the context for subsequent testing.
      *
