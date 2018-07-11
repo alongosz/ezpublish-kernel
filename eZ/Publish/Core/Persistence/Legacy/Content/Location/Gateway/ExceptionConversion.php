@@ -157,6 +157,22 @@ class ExceptionConversion extends Gateway
     }
 
     /**
+     * Load all Content Tree nodes except the Root node.
+     *
+     * @return array an associative array of raw database rows
+     */
+    public function getAllLocationsData()
+    {
+        try {
+            return $this->innerGateway->getAllLocationsData();
+        } catch (DBALException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        } catch (PDOException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        }
+    }
+
+    /**
      * Returns data for the first level children of the location identified by given $locationId.
      *
      * @param mixed $locationId

@@ -122,6 +122,19 @@ class Handler implements BaseLocationHandler
     }
 
     /**
+     * Loads all the subtree nodes except the Root node.
+     *
+     * @param int $limit result set limit (-1 to disable)
+     * @param int $offset result set offset
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content\Location[]
+     */
+    public function loadAllLocations(int $limit, int $offset = 0): array
+    {
+        return $this->treeHandler->loadAllLocations($limit, $offset);
+    }
+
+    /**
      * Loads the data for the location identified by $remoteId.
      *
      * @param string $remoteId

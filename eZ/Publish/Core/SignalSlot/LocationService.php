@@ -128,6 +128,14 @@ class LocationService implements LocationServiceInterface
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function loadAllLocations(int $limit, int $offset = 0)
+    {
+        return $this->service->loadAllLocations($limit, $offset);
+    }
+
+    /**
      * Returns the number of children which are readable by the current user of a location object.
      *
      * @param \eZ\Publish\API\Repository\Values\Content\Location $location

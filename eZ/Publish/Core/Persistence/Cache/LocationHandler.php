@@ -66,6 +66,34 @@ class LocationHandler extends AbstractHandler implements LocationHandlerInterfac
     /**
      * {@inheritdoc}
      */
+    public function loadAllLocations(int $limit, int $offset = 0): array
+    {
+        $cacheItem = $this->cache->getItem("ez-all-locations-${limit}-${offset}");
+        if ($cacheItem->isHit()) {
+            return $cacheItem->get();
+        }
+
+        $this->logger->logCall(__METHOD__, ['limit' => $limit, 'offset' => $offset]);
+
+        $spiLocations = $this->persistenceHandler->locationHandler()->loadAllLocations(
+            $limit,
+            $offset
+        );
+        $cacheItem->set($spiLocations);
+        $cacheTags = ['ez-all-locations'];
+        foreach ($spiLocations as $spiLocation) {
+            $cacheTags[] = 'location-' . $spiLocation->id;
+            $cacheTags[] = 'location-path-' . $spiLocation->id;
+        }
+        $cacheItem->tag($cacheTags);
+        $this->cache->save($cacheItem);
+
+        return $spiLocations;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function loadLocationsByContent($contentId, $rootLocationId = null)
     {
         if ($rootLocationId) {

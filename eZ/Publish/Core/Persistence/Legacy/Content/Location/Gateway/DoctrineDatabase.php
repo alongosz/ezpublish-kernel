@@ -8,6 +8,7 @@
  */
 namespace eZ\Publish\Core\Persistence\Legacy\Content\Location\Gateway;
 
+use Doctrine\DBAL\FetchMode;
 use eZ\Publish\Core\Persistence\Legacy\Content\Location\Gateway;
 use eZ\Publish\Core\Persistence\Database\DatabaseHandler;
 use eZ\Publish\Core\Persistence\Database\SelectQuery;
@@ -228,6 +229,25 @@ class DoctrineDatabase extends Gateway
         $results = $statement->fetchAll($onlyIds ? (PDO::FETCH_COLUMN | PDO::FETCH_GROUP) : PDO::FETCH_ASSOC);
         // array_map() is used to to map all elements stored as $results[$i][0] to $results[$i]
         return $onlyIds ? array_map('reset', $results) : $results;
+    }
+
+    /**
+     * Load all Content Tree Location (node) ids except the Root node.
+     *
+     * @return array Raw database result set
+     */
+    public function getAllLocationsData()
+    {
+        $queryBuilder = $this->connection->createQueryBuilder();
+        $queryBuilder
+            ->select('*')
+            ->from('ezcontentobject_tree')
+            // node_id = parent_node_id occurs only for the Root node.
+            ->where($queryBuilder->expr()->neq('node_id', 'parent_node_id'))
+            ->orderBy('depth', 'ASC')
+            ->addOrderBy('node_id', 'ASC');
+
+        return $queryBuilder->execute()->fetchAll(FetchMode::ASSOCIATIVE);
     }
 
     /**

@@ -86,6 +86,13 @@ abstract class Gateway
     abstract public function getSubtreeContent($sourceId, $onlyIds = false);
 
     /**
+     * Load all Content Tree nodes except the Root node.
+     *
+     * @return array an associative array of raw database rows
+     */
+    abstract public function getAllLocationsData();
+
+    /**
      * Returns data for the first level children of the location identified by given $locationId.
      *
      * @param mixed $locationId

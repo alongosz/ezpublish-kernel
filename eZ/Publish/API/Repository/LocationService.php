@@ -102,6 +102,16 @@ interface LocationService
     public function loadParentLocationsForDraftContent(VersionInfo $versionInfo, array $prioritizedLanguages = null);
 
     /**
+     * Load all Locations.
+     *
+     * @param int $limit paginator limit (-1 to disable)
+     * @param int $offset paginator offset
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Location[]
+     */
+    public function loadAllLocations(int $limit, int $offset = 0);
+
+    /**
      * Returns the number of children which are readable by the current user of a location object.
      *
      * @param \eZ\Publish\API\Repository\Values\Content\Location $location

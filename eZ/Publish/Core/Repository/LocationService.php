@@ -324,6 +324,28 @@ class LocationService implements LocationServiceInterface
     }
 
     /**
+     * Load all Locations.
+     *
+     * @param int $limit paginator limit (-1 to disable)
+     * @param int $offset paginator offset
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Location[]
+     */
+    public function loadAllLocations(int $limit, int $offset = 0): array
+    {
+        $spiLocations = $this
+            ->persistenceHandler
+            ->locationHandler()->loadAllLocations($limit, $offset);
+
+        $locations = [];
+        foreach ($spiLocations as $spiLocation) {
+            $locations[] = $this->domainMapper->buildLocation($spiLocation);
+        }
+
+        return $locations;
+    }
+
+    /**
      * Returns the number of children which are readable by the current user of a location object.
      *
      * @param \eZ\Publish\API\Repository\Values\Content\Location $location

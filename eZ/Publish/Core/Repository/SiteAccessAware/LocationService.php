@@ -91,6 +91,11 @@ class LocationService implements LocationServiceInterface
         );
     }
 
+    public function loadAllLocations(int $limit, int $offset = 0)
+    {
+        $this->service->loadAllLocations($limit, $offset);
+    }
+
     public function getLocationChildCount(Location $location)
     {
         return $this->service->getLocationChildCount($location);
