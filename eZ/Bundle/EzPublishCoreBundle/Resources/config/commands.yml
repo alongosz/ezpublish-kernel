@@ -1,0 +1,11 @@
+services:
+    ezpublish.console.command.regenerate_url_aliases:
+        class: eZ\Bundle\EzPublishCoreBundle\Command\RegenerateUrlAliasesCommand
+        arguments:
+            - '@=service("ezpublish.api.repository").getPermissionResolver()'
+            - '@ezpublish.api.service.user'
+            - '@ezpublish.api.service.search'
+            - '@ezpublish.api.service.location'
+            - '@ezpublish.api.service.url_alias'
+        tags:
+            - { name: console.command }
