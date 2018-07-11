@@ -8,8 +8,11 @@
  */
 namespace eZ\Publish\API\Repository\Tests;
 
+use eZ\Publish\API\Repository\Tests\Common\SlugConverter as TestSlugConverter;
+use eZ\Publish\API\Repository\Values\Content\Location;
 use eZ\Publish\API\Repository\Values\Content\URLAlias;
 use Exception;
+use RuntimeException;
 
 /**
  * Test case for operations in the URLAliasService using in memory storage.
@@ -1028,5 +1031,173 @@ DOCBOOK
         $aliases = $urlAliasService->listLocationAliases($articleLocation, false);
 
         $this->assertEquals('/My-Folder-Modified/My-Article', $aliases[0]->path);
+    }
+
+    /**
+     * Test lookup on multilingual nested Locations returns proper UrlAlias Value.
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\ForbiddenException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     */
+    public function testLookupOnMultilingualNestedLocations()
+    {
+        $urlAliasService = $this->getRepository()->getURLAliasService();
+        $topFolderNames = [
+            'eng-GB' => 'My folder Name',
+            'ger-DE' => 'Ger folder Name',
+            'eng-US' => 'My folder Name',
+        ];
+        $nestedFolderNames = [
+            'eng-GB' => 'nested Folder name',
+            'ger-DE' => 'Ger Nested folder Name',
+            'eng-US' => 'nested Folder name',
+        ];
+        $topFolderLocation = $this->createFolder($topFolderNames, 2);
+        $nestedFolderLocation = $this->createFolder($nestedFolderNames, $topFolderLocation->id);
+        $urlAlias = $urlAliasService->lookup('/My-Folder-Name/Nested-Folder-Name');
+        self::assertPropertiesCorrect(
+            [
+                'destination' => $nestedFolderLocation->id,
+                'path' => '/My-folder-Name/nested-Folder-name',
+                'languageCodes' => ['eng-US', 'eng-GB'],
+                'isHistory' => false,
+                'isCustom' => false,
+                'forward' => false,
+            ],
+            $urlAlias
+        );
+        $urlAlias = $urlAliasService->lookup('/Ger-Folder-Name/Ger-Nested-Folder-Name');
+        self::assertPropertiesCorrect(
+            [
+                'destination' => $nestedFolderLocation->id,
+                'path' => '/Ger-folder-Name/Ger-Nested-folder-Name',
+                'languageCodes' => ['ger-DE'],
+                'isHistory' => false,
+                'isCustom' => false,
+                'forward' => false,
+            ],
+            $urlAlias
+        );
+
+        return [$topFolderLocation, $nestedFolderLocation];
+    }
+
+    /**
+     * Test refreshSystemUrlAliasesForLocation historizes and changes current URL alias after
+     * changing SlugConverter configuration.
+     *
+     * @depends testLookupOnMultilingualNestedLocations
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\ForbiddenException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     * @throws \ErrorException
+     */
+    public function testRefreshSystemUrlAliasesForLocationWithChangedSlugConverterConfiguration()
+    {
+        list($topFolderLocation, $nestedFolderLocation) = $this->testLookupOnMultilingualNestedLocations();
+
+        $urlAliasService = $this->getRepository(false)->getURLAliasService();
+
+        $this->changeSlugConverterConfiguration('transformation', 'urlalias_lowercase');
+        $this->changeSlugConverterConfiguration('wordSeparatorName', 'underscore');
+
+        try {
+            $urlAliasService->refreshSystemUrlAliasesForLocation($topFolderLocation);
+            $urlAliasService->refreshSystemUrlAliasesForLocation($nestedFolderLocation);
+
+            $urlAlias = $urlAliasService->lookup('/My-Folder-Name/Nested-Folder-Name');
+            $this->assertUrlAliasPropertiesCorrect(
+                $nestedFolderLocation,
+                '/My-folder-Name/nested-Folder-name',
+                ['eng-US', 'eng-GB'],
+                true,
+                $urlAlias
+            );
+
+            $urlAlias = $urlAliasService->lookup('/my_folder_name/nested_folder_name');
+            $this->assertUrlAliasPropertiesCorrect(
+                $nestedFolderLocation,
+                '/my_folder_name/nested_folder_name',
+                ['eng-US', 'eng-GB'],
+                false,
+                $urlAlias
+            );
+
+            $urlAlias = $urlAliasService->lookup('/Ger-Folder-Name/Ger-Nested-Folder-Name');
+            $this->assertUrlAliasPropertiesCorrect(
+                $nestedFolderLocation,
+                '/Ger-folder-Name/Ger-Nested-folder-Name',
+                ['ger-DE'],
+                true,
+                $urlAlias
+            );
+
+            $urlAlias = $urlAliasService->lookup('/ger_folder_name/ger_nested_folder_name');
+            $this->assertUrlAliasPropertiesCorrect(
+                $nestedFolderLocation,
+                '/ger_folder_name/ger_nested_folder_name',
+                ['ger-DE'],
+                false,
+                $urlAlias
+            );
+        } finally {
+            // restore configuration
+            $this->changeSlugConverterConfiguration('transformation', 'urlalias');
+            $this->changeSlugConverterConfiguration('wordSeparatorName', 'dash');
+        }
+    }
+
+    /**
+     * Mutate 'ezpublish.persistence.slug_converter' Service configuration.
+     *
+     * @param string $key
+     * @param string $value
+     *
+     * @throws \ErrorException
+     * @throws \Exception
+     */
+    protected function changeSlugConverterConfiguration(string $key, string $value): void
+    {
+        $testSlugConverter = $this
+            ->getSetupFactory()
+            ->getServiceContainer()
+            ->getInnerContainer()
+            ->get('ezpublish.persistence.slug_converter');
+
+        if (!$testSlugConverter instanceof TestSlugConverter) {
+            throw new RuntimeException(
+                sprintf(
+                    '%s: expected instance of %s, got %s',
+                    __METHOD__,
+                    TestSlugConverter::class,
+                    get_class($testSlugConverter)
+                )
+            );
+        }
+
+        $testSlugConverter->setConfigurationValue($key, $value);
+    }
+
+    private function assertUrlAliasPropertiesCorrect(
+        Location $expectedDestinationLocation,
+        string $expectedPath,
+        array $expectedLanguageCodes,
+        bool $expectedIsHistory,
+        URLAlias $actualUrlAliasValue
+    ) {
+        self::assertPropertiesCorrect(
+            [
+                'destination' => $expectedDestinationLocation->id,
+                'path' => $expectedPath,
+                // @todo uncomment after fixing EZP-27124
+                //'languageCodes' => $expectedLanguageCodes,
+                'isHistory' => $expectedIsHistory,
+                'isCustom' => false,
+                'forward' => false,
+            ],
+            $actualUrlAliasValue
+        );
     }
 }

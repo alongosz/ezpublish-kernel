@@ -28,6 +28,12 @@ parameters:
                     default_value: 'latex'
                     choices: ['latex', 'tex']
 
+    # for tests of features using prioritized languages list
+    languages:
+        - eng-US
+        - eng-GB
+        - ger-DE
+
 services:
     logger:
         class: Psr\Log\NullLogger
@@ -36,3 +42,10 @@ services:
     ezpublish.cache_pool.driver:
         class: Symfony\Component\Cache\Adapter\ArrayAdapter
         arguments: [120, false]
+
+    # Override Slug Converter service to expose mutating Service configuration
+    ezpublish.persistence.slug_converter:
+        class: eZ\Publish\API\Repository\Tests\Common\SlugConverter
+        arguments:
+            - '@ezpublish.api.storage_engine.transformation_processor'
+            - []
