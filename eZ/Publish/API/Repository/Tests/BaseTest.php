@@ -10,6 +10,7 @@ namespace eZ\Publish\API\Repository\Tests;
 
 use eZ\Publish\API\Repository\Exceptions\ContentFieldValidationException;
 use eZ\Publish\API\Repository\Tests\PHPUnitConstraint\ValidationErrorOccurs as PHPUnitConstraintValidationErrorOccurs;
+use eZ\Publish\API\Repository\Values\Content\Content;
 use EzSystems\EzPlatformSolrSearchEngine\Tests\SetupFactory\LegacySetupFactory as LegacySolrSetupFactory;
 use PHPUnit\Framework\TestCase;
 use eZ\Publish\API\Repository\Repository;
@@ -567,5 +568,95 @@ abstract class BaseTest extends TestCase
         $constraint = new PHPUnitConstraintValidationErrorOccurs($expectedValidationErrorMessage);
 
         self::assertThat($exception, $constraint);
+    }
+
+    /**
+     * Create 'folder' Content.
+     *
+     * @param array $names Folder names in the form of <code>['&lt;language_code&gt;' => '&lt;name&gt;']</code>
+     * @param int $parentLocationId
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Content
+     */
+    protected function createFolder(array $names, $parentLocationId)
+    {
+        $repository = $this->getRepository(false);
+        try {
+            $repository->beginTransaction();
+            $contentService = $repository->getContentService();
+            $contentTypeService = $repository->getContentTypeService();
+            $locationService = $repository->getLocationService();
+
+            $mainLanguageCode = array_keys($names)[0];
+
+            $contentCreateStruct = $contentService->newContentCreateStruct(
+                $contentTypeService->loadContentTypeByIdentifier('folder'),
+                $mainLanguageCode
+            );
+            foreach ($names as $languageCode => $translatedName) {
+                $contentCreateStruct->setField('name', $translatedName, $languageCode);
+            }
+            $contentDraft = $contentService->createContent(
+                $contentCreateStruct,
+                [$locationService->newLocationCreateStruct($parentLocationId)]
+            );
+            $content = $contentService->publishVersion($contentDraft->versionInfo);
+
+            $repository->commit();
+
+            return $content;
+        } catch (Exception $e) {
+            self::fail(
+                'Failed to create folder with ' . serialize($names) . ' names. Exception: ' . $e
+            );
+        }
+    }
+
+    /**
+     * Create Draft, update given Field and publish updated Version of the given Content.
+     *
+     * @param \eZ\Publish\API\Repository\Values\Content\Content $content
+     * @param string $fieldDefinitionIdentifier
+     * @param array $multilingualFieldValues <code>['<language-code>' => '<value>']</code>
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Content
+     */
+    protected function updateContentField(
+        Content $content,
+        $fieldDefinitionIdentifier,
+        array $multilingualFieldValues
+    ) {
+        $repository = $this->getRepository(false);
+        $contentService = $repository->getContentService();
+
+        $repository->beginTransaction();
+        try {
+            $contentUpdateStruct = $contentService->newContentUpdateStruct();
+            foreach ($multilingualFieldValues as $languageCode => $value) {
+                $contentUpdateStruct->setField($fieldDefinitionIdentifier, $value, $languageCode);
+            }
+            $content = $contentService->publishVersion(
+                $contentService
+                    ->updateContent(
+                        $contentService->createContentDraft($content->contentInfo)->versionInfo,
+                        $contentUpdateStruct
+                    )
+                    ->getVersionInfo()
+            );
+
+            $repository->commit();
+
+            return $content;
+        } catch (Exception $e) {
+            $repository->rollback();
+            self::fail(
+                sprintf(
+                    'Failed to update Content field %s with %s values. Exception: %s',
+                    $fieldDefinitionIdentifier,
+                    serialize($multilingualFieldValues),
+                    $e
+                )
+            );
+        }
     }
 }
