@@ -8,6 +8,9 @@
  */
 namespace eZ\Publish\API\Repository\Tests;
 
+use eZ\Publish\API\Repository\Exceptions\ForbiddenException;
+use eZ\Publish\API\Repository\Exceptions\NotFoundException;
+use eZ\Publish\API\Repository\Exceptions\UnauthorizedException;
 use eZ\Publish\API\Repository\Values\Content\URLAlias;
 use Exception;
 
@@ -1028,5 +1031,172 @@ DOCBOOK
         $aliases = $urlAliasService->listLocationAliases($articleLocation, false);
 
         $this->assertEquals('/My-Folder-Modified/My-Article', $aliases[0]->path);
+    }
+
+    /**
+     * @see https://jira.ez.no/browse/EZP-27124
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     */
+    public function testLookupOnMultilingualRenamedParent()
+    {
+        $repository = $this->getRepository();
+        $urlAliasService = $repository->getURLAliasService();
+
+        $folder = $this->createFolder(['eng-US' => 'AmE Root Name'], 2);
+        $nestedFolder = $this->createFolder(
+            ['eng-US' => 'AmE Nested Name'],
+            $folder->contentInfo->mainLocationId
+        );
+
+        // translate Content to British English, but keep the same name
+        $folder = $this->updateContentField($folder, 'name', ['eng-GB' => 'Common Root Name']);
+
+        // change American translation
+        $folder = $this->updateContentField($folder, 'name', ['eng-US' => 'AmE Root Name']);
+
+        // check historization
+        $oldUrl = '/Common-Root-Name/AmE-Nested-Name';
+        $urlAlias = $urlAliasService->lookup($oldUrl, 'eng-US');
+        self::assertEquals($nestedFolder->contentInfo->mainLocationId, $urlAlias->destination);
+        self::assertEquals($oldUrl, $urlAlias->path);
+        self::assertEquals(true, $urlAlias->isHistory, "Old URL '{$oldUrl}' is not historized");
+
+        // check current address
+        $currentUrl = '/AmE-Root-Name/AmE-Nested-Name';
+        $urlAlias = $urlAliasService->lookup($currentUrl);
+        self::assertEquals($nestedFolder->contentInfo->mainLocationId, $urlAlias->destination);
+        self::assertEquals($currentUrl, $urlAlias->path);
+        self::assertEquals(false, $urlAlias->isHistory, "Current URL '{$currentUrl}' is historized");
+
+        // change British translation
+        $folder = $this->updateContentField($folder, 'name', ['eng-GB' => 'BrE Updated Root Name']);
+
+        // check current address
+        $oldUrl = '/BrE-Updated-Root-Name/AmE-Nested-Name';
+        $urlAlias = $urlAliasService->lookup($oldUrl);
+        self::assertEquals($nestedFolder->contentInfo->mainLocationId, $urlAlias->destination);
+        self::assertEquals($oldUrl, $urlAlias->path);
+        self::assertEquals(false, $urlAlias->isHistory, "Old URL '{$oldUrl}' is not historized");
+
+        // check historization of initial translation
+        $currentUrl = '/Common-Root-Name/AmE-Nested-Name';
+        $urlAlias = $urlAliasService->lookup($currentUrl);
+        self::assertEquals($nestedFolder->contentInfo->mainLocationId, $urlAlias->destination);
+        self::assertEquals($currentUrl, $urlAlias->path);
+        self::assertEquals(true, $urlAlias->isHistory, "Current URL '{$currentUrl}' is historized");
+    }
+
+    /**
+     * Test lookup for multilingual Content which name gets renamed.
+     *
+     * @dataProvider providerForLookupOnMultilingualRenamedContent
+     *
+     * @param array $names
+     * @param array $newNames
+     * @param array $urls
+     * @param array $newUrls
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\ForbiddenException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     */
+    public function testLookupOnMultilingualRenamedContent(
+        array $names,
+        array $newNames,
+        array $urls,
+        array $newUrls
+    ) {
+        $repository = $this->getRepository();
+
+        $urlAliasService = $repository->getURLAliasService();
+        $contentService = $repository->getContentService();
+        $locationService = $repository->getLocationService();
+
+        $repository->beginTransaction();
+        try {
+            $folder = $this->createFolder(
+                $names,
+                2
+            );
+            $folderLocation = $locationService->loadLocation($folder->contentInfo->mainLocationId);
+            // sanity check
+            foreach ($urls as $url => $expectedLanguageCodes) {
+                $urlAlias = $urlAliasService->lookup($url);
+                self::assertEquals($folderLocation->id, $urlAlias->destination);
+                self::assertEquals($expectedLanguageCodes, $urlAlias->languageCodes, "Initial URL '{$url}' contains unexpected list of language codes");
+                self::assertEquals(false, $urlAlias->isHistory, "Initial URL '{$url}' has been unexpectedly historized");
+            }
+
+            // update content field used to generate URL alias
+            $contentUpdateStruct = $contentService->newContentUpdateStruct();
+            foreach ($newNames as $languageCode => $newName) {
+                $contentUpdateStruct->setField('name', $newName, $languageCode);
+            }
+            $contentDraft = $contentService->createContentDraft($folderLocation->getContentInfo());
+            $contentService->publishVersion(
+                $contentService
+                    ->updateContent($contentDraft->getVersionInfo(), $contentUpdateStruct)
+                    ->getVersionInfo()
+            );
+
+            // check old aliases
+            foreach ($urls as $url => $expectedLanguageCodes) {
+                $urlAlias = $urlAliasService->lookup($url);
+                self::assertEquals($folderLocation->id, $urlAlias->destination);
+                self::assertEquals($expectedLanguageCodes, $urlAlias->languageCodes, "Old URL '{$url}' contains unexpected list of language codes");
+                self::assertEquals(true, $urlAlias->isHistory, "Old URL '{$url}' has not been historized");
+            }
+
+            // check new aliases
+            foreach ($newUrls as $url => $expectedLanguageCodes) {
+                $urlAlias = $urlAliasService->lookup($url);
+                self::assertEquals($folderLocation->id, $urlAlias->destination);
+                self::assertEquals($expectedLanguageCodes, $urlAlias->languageCodes, "New URL '{$url}' contains unexpected list of language codes");
+                self::assertEquals(false, $urlAlias->isHistory, "New URL '{$url}' has been unexpectedly historized");
+            }
+
+            $repository->commit();
+        } catch (ForbiddenException $e) {
+            $repository->rollback();
+            throw $e;
+        } catch (NotFoundException $e) {
+            $repository->rollback();
+            throw $e;
+        } catch (UnauthorizedException $e) {
+            $repository->rollback();
+            throw $e;
+        }
+    }
+
+    public function providerForLookupOnMultilingualRenamedContent()
+    {
+        return [
+            [
+                ['eng-GB' => 'Folder Name', 'eng-US' => 'Folder Name'],
+                ['eng-GB' => 'New Name', 'eng-US' => 'New Name'],
+                ['/Folder-Name' => ['eng-US', 'eng-GB']],
+                ['/New-Name' => ['eng-US', 'eng-GB']],
+            ],
+            [
+                ['eng-GB' => 'Folder Name', 'eng-US' => 'Folder Name'],
+                ['eng-GB' => 'New Name', 'eng-US' => 'Other Name'],
+                ['/Folder-Name' => ['eng-US', 'eng-GB']],
+                ['/New-Name' => ['eng-GB'], '/Other-Name' => ['eng-US']],
+            ],
+            [
+                ['eng-GB' => 'Folder Name', 'eng-US' => 'Other Name'],
+                ['eng-GB' => 'New Name', 'eng-US' => 'New Name'],
+                ['/Folder-Name' => ['eng-GB'], '/Other-Name' => ['eng-US']],
+                ['/New-Name' => ['eng-US', 'eng-GB']],
+            ],
+            [
+                ['eng-GB' => 'Folder Name', 'eng-US' => 'Other Name'],
+                ['eng-GB' => 'New Name', 'eng-US' => 'Another Name'],
+                ['/Folder-Name' => ['eng-GB'], '/Other-Name' => ['eng-US']],
+                ['/New-Name' => ['eng-GB'], '/Another-Name' => ['eng-US']],
+            ],
+        ];
     }
 }
