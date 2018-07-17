@@ -8,6 +8,8 @@
  */
 namespace eZ\Publish\API\Repository\Tests;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\FetchMode;
 use eZ\Publish\API\Repository\Tests\Common\SlugConverter as TestSlugConverter;
 use eZ\Publish\API\Repository\Values\Content\Location;
 use eZ\Publish\API\Repository\Values\Content\URLAlias;
@@ -1150,6 +1152,44 @@ DOCBOOK
     }
 
     /**
+     * Test deleting corrupted URL aliases.
+     *
+     * Note: this test will not be needed once we introduce Improved Storage with Foreign keys support.
+     *
+     * Note: test depends on already broken URL aliases: eznode:59, eznode:59, eznode:60.
+     *
+     * @throws \ErrorException
+     */
+    public function testDeleteCorruptedUrlAliases()
+    {
+        $repository = $this->getRepository();
+        $urlAliasService = $repository->getURLAliasService();
+        $connection = $this->getRawDatabaseConnection();
+
+        $query = $connection->createQueryBuilder()->select('*')->from('ezurlalias_ml');
+        $originalRows = $query->execute()->fetchAll(FetchMode::ASSOCIATIVE);
+
+        $expectedCount = count($originalRows);
+        $expectedCount += $this->insertBrokenUrlAliasTableFixtures($connection);
+
+        // sanity check
+        $updatedRows = $query->execute()->fetchAll(FetchMode::ASSOCIATIVE);
+        self::assertCount($expectedCount, $updatedRows, 'Found unexpected number of new rows');
+
+        // BEGIN API use case
+        $urlAliasService->deleteCorruptedUrlAliases();
+        // END API use case
+
+        $updatedRows = $query->execute()->fetchAll(FetchMode::ASSOCIATIVE);
+        self::assertCount(
+            // API should also remove already broken pre-existing URL aliases to Locations 50 and 2x 59
+            count($originalRows) - 3,
+            $updatedRows,
+            'Number of rows after cleanup is not the same as the original number of rows'
+        );
+    }
+
+    /**
      * Mutate 'ezpublish.persistence.slug_converter' Service configuration.
      *
      * @param string $key
@@ -1199,5 +1239,95 @@ DOCBOOK
             ],
             $actualUrlAliasValue
         );
+    }
+
+    /**
+     * @return \Doctrine\DBAL\Connection
+     *
+     * @throws \ErrorException
+     */
+    private function getRawDatabaseConnection()
+    {
+        $connection = $this
+            ->getSetupFactory()
+            ->getServiceContainer()->get('ezpublish.api.storage_engine.legacy.connection');
+
+        if (!$connection instanceof Connection) {
+            throw new \RuntimeException(
+                sprintf('Expected %s got something else', Connection::class)
+            );
+        }
+
+        return $connection;
+    }
+
+    /**
+     * Insert intentionally broken rows into ezurlalias_ml table to test cleanup API.
+     *
+     * @see \eZ\Publish\API\Repository\URLAliasService::deleteCorruptedUrlAliases
+     * @see testDeleteCorruptedUrlAliases
+     *
+     * @param \Doctrine\DBAL\Connection $connection
+     *
+     * @return int Number of new rows
+     */
+    private function insertBrokenUrlAliasTableFixtures(Connection $connection)
+    {
+        $rows = [
+            // link to non-existent location
+            [
+                'action' => 'eznode:9999',
+                'action_type' => 'eznode',
+                'alias_redirects' => 0,
+                'id' => 9997,
+                'is_alias' => 0,
+                'is_original' => 1,
+                'lang_mask' => 3,
+                'link' => 9997,
+                'parent' => 0,
+                'text' => 'my-location',
+                'text_md5' => '19d12b1b9994619cd8e90f00a6f5834e',
+            ],
+            // link to non-existent target URL alias (`link` column)
+            [
+                'action' => 'nop:',
+                'action_type' => 'nop',
+                'alias_redirects' => 0,
+                'id' => 9998,
+                'is_alias' => 1,
+                'is_original' => 1,
+                'lang_mask' => 2,
+                'link' => 9995,
+                'parent' => 0,
+                'text' => 'my-alias1',
+                'text_md5' => 'a29dd95ccf4c1bc7ebbd61086863b632',
+            ],
+            // link to non-existent parent URL alias
+            [
+                'action' => 'nop:',
+                'action_type' => 'nop',
+                'alias_redirects' => 0,
+                'id' => 9999,
+                'is_alias' => 0,
+                'is_original' => 1,
+                'lang_mask' => 3,
+                'link' => 9999,
+                'parent' => 9995,
+                'text' => 'my-alias2',
+                'text_md5' => 'e5dea18481e4f86857865d9fc94e4ce9',
+            ],
+        ];
+
+        $query = $connection->createQueryBuilder()->insert('ezurlalias_ml');
+
+        foreach ($rows as $row) {
+            foreach ($row as $columnName => $value) {
+                $row[$columnName] = $query->createNamedParameter($value);
+            }
+            $query->values($row);
+            $query->execute();
+        }
+
+        return count($rows);
     }
 }
