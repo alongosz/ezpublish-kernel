@@ -86,11 +86,24 @@ abstract class Gateway
     abstract public function getSubtreeContent($sourceId, $onlyIds = false);
 
     /**
+     * Get a number of all Content Tree Locations except the Root node.
+     *
+     * Can be used for pagination of getAllLocationsData
+     * @see getAllLocationsData
+     *
+     * @return int
+     */
+    abstract public function countAllLocations();
+
+    /**
      * Load all Content Tree nodes except the Root node.
+     *
+     * @param int $limit paginator limit
+     * @param int $offset paginator offset
      *
      * @return array an associative array of raw database rows
      */
-    abstract public function getAllLocationsData();
+    abstract public function getAllLocationsData($limit, $offset = 0);
 
     /**
      * Returns data for the first level children of the location identified by given $locationId.

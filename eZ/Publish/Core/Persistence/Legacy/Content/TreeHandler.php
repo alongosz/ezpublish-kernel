@@ -170,7 +170,7 @@ class TreeHandler
      */
     public function loadAllLocations(int $limit, int $offset = 0): array
     {
-        $data = $this->locationGateway->getAllLocationsData();
+        $data = $this->locationGateway->getAllLocationsData($limit, $offset);
 
         return $this->locationMapper->createLocationsFromRows($data);
     }

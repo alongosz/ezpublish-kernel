@@ -157,14 +157,36 @@ class ExceptionConversion extends Gateway
     }
 
     /**
+     * Get a number of all Content Tree Locations except the Root node.
+     *
+     * Can be used for pagination of getAllLocationsData
+     * @see getAllLocationsData
+     *
+     * @return int
+     */
+    public function countAllLocations()
+    {
+        try {
+            return $this->innerGateway->countAllLocations();
+        } catch (DBALException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        } catch (PDOException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        }
+    }
+
+    /**
      * Load all Content Tree nodes except the Root node.
+     *
+     * @param int $limit paginator limit
+     * @param int $offset paginator offset
      *
      * @return array an associative array of raw database rows
      */
-    public function getAllLocationsData()
+    public function getAllLocationsData($limit, $offset = 0)
     {
         try {
-            return $this->innerGateway->getAllLocationsData();
+            return $this->innerGateway->getAllLocationsData($limit, $offset);
         } catch (DBALException $e) {
             throw new RuntimeException('Database error', 0, $e);
         } catch (PDOException $e) {

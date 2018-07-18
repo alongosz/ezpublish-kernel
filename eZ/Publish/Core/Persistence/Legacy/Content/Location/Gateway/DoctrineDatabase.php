@@ -232,22 +232,53 @@ class DoctrineDatabase extends Gateway
     }
 
     /**
+     * Get a number of all Content Tree Locations except the Root node.
+     *
+     * Can be used for pagination of getAllLocationsData
+     * @see getAllLocationsData
+     *
+     * @return int
+     */
+    public function countAllLocations()
+    {
+        $queryBuilder = $this
+            ->getAllLocationsDataQuery(['count(node_id)']);
+
+        return (int) $queryBuilder->execute()->fetchColumn();
+    }
+
+    /**
      * Load all Content Tree Location (node) ids except the Root node.
+     *
+     * @param int $limit paginator limit
+     * @param int $offset paginator offset
      *
      * @return array Raw database result set
      */
-    public function getAllLocationsData()
+    public function getAllLocationsData($limit, $offset = 0)
+    {
+        $queryBuilder = $this
+            ->getAllLocationsDataQuery(['*'])
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+        ;
+
+        return $queryBuilder->execute()->fetchAll(FetchMode::ASSOCIATIVE);
+    }
+
+    protected function getAllLocationsDataQuery(array $columns)
     {
         $queryBuilder = $this->connection->createQueryBuilder();
         $queryBuilder
-            ->select('*')
+            ->select($columns)
             ->from('ezcontentobject_tree')
             // node_id = parent_node_id occurs only for the Root node.
             ->where($queryBuilder->expr()->neq('node_id', 'parent_node_id'))
             ->orderBy('depth', 'ASC')
-            ->addOrderBy('node_id', 'ASC');
+            ->addOrderBy('node_id', 'ASC')
+        ;
 
-        return $queryBuilder->execute()->fetchAll(FetchMode::ASSOCIATIVE);
+        return $queryBuilder;
     }
 
     /**
