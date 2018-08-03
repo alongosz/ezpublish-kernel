@@ -765,6 +765,22 @@ class URLAliasService implements URLAliasServiceInterface
     }
 
     /**
+     * Delete global, system or custom URL alias pointing to non-existent Locations.
+     *
+     * @return int Number of removed URL aliases
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     */
+    public function deleteCorruptedUrlAliases()
+    {
+        if ($this->repository->getPermissionResolver()->hasAccess('content', 'urltranslator') !== true) {
+            throw new UnauthorizedException('content', 'urltranslator');
+        }
+
+        return $this->urlAliasHandler->deleteCorruptedUrlAliases();
+    }
+
+    /**
      * @param string $url
      *
      * @return string
