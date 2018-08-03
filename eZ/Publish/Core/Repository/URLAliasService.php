@@ -8,6 +8,7 @@
  */
 namespace eZ\Publish\Core\Repository;
 
+use eZ\Publish\API\Repository\Exceptions\NotFoundException as APINotFoundException;
 use eZ\Publish\API\Repository\URLAliasService as URLAliasServiceInterface;
 use eZ\Publish\API\Repository\Repository as RepositoryInterface;
 use eZ\Publish\SPI\Persistence\Content\UrlAlias\Handler;
@@ -16,6 +17,7 @@ use eZ\Publish\API\Repository\Values\Content\URLAlias;
 use eZ\Publish\SPI\Persistence\Content\URLAlias as SPIURLAlias;
 use eZ\Publish\Core\Base\Exceptions\NotFoundException;
 use eZ\Publish\Core\Base\Exceptions\InvalidArgumentException;
+use eZ\Publish\Core\Base\Exceptions\UnauthorizedException;
 use eZ\Publish\API\Repository\Exceptions\ForbiddenException;
 use Exception;
 
@@ -42,14 +44,24 @@ class URLAliasService implements URLAliasServiceInterface
     protected $settings;
 
     /**
+     * @var \eZ\Publish\Core\Repository\Helper\NameSchemaService
+     */
+    protected $nameSchemaService;
+
+    /**
      * Setups service with reference to repository object that created it & corresponding handler.
      *
      * @param \eZ\Publish\API\Repository\Repository $repository
      * @param \eZ\Publish\SPI\Persistence\Content\UrlAlias\Handler $urlAliasHandler
+     * @param \eZ\Publish\Core\Repository\Helper\NameSchemaService
      * @param array $settings
      */
-    public function __construct(RepositoryInterface $repository, Handler $urlAliasHandler, array $settings = array())
-    {
+    public function __construct(
+        RepositoryInterface $repository,
+        Handler $urlAliasHandler,
+        Helper\NameSchemaService $nameSchemaService,
+        array $settings = []
+    ) {
         $this->repository = $repository;
         $this->urlAliasHandler = $urlAliasHandler;
         // Union makes sure default settings are ignored if provided in argument
@@ -58,6 +70,7 @@ class URLAliasService implements URLAliasServiceInterface
         );
         // Get prioritized languages from language service to not have to call it several times
         $this->settings['prioritizedLanguageList'] = $repository->getContentLanguageService()->getPrioritizedLanguageCodeList();
+        $this->nameSchemaService = $nameSchemaService;
     }
 
     /**
@@ -708,6 +721,47 @@ class URLAliasService implements URLAliasServiceInterface
         }
 
         return $this->buildUrlAliasDomainObject($spiUrlAlias, $path);
+    }
+
+    /**
+     * Refresh all system URL aliases for the given Location (and historize outdated if needed).
+     *
+     * @param \eZ\Publish\API\Repository\Values\Content\Location $location
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\ForbiddenException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     */
+    public function refreshSystemUrlAliasesForLocation(Location $location)
+    {
+        if (!$this->repository->getPermissionResolver()->canUser('content', 'urltranslator', $location)) {
+            throw new UnauthorizedException('content', 'urltranslator');
+        }
+
+        $this->repository->beginTransaction();
+        try {
+            $content = $this->repository->getContentService()->loadContent($location->contentInfo->id);
+            $urlAliasNames = $this->nameSchemaService->resolveUrlAliasSchema($content);
+            foreach ($urlAliasNames as $languageCode => $name) {
+                $this->urlAliasHandler->publishUrlAliasForLocation(
+                    $location->id,
+                    $location->parentLocationId,
+                    $name,
+                    $languageCode,
+                    $content->contentInfo->alwaysAvailable
+                );
+            }
+            // handle URL aliases for missing Translations
+            $this->urlAliasHandler->archiveUrlAliasesForDeletedTranslations(
+                $location->id,
+                $location->parentLocationId,
+                $content->getVersionInfo()->languageCodes
+            );
+            $this->repository->commit();
+        } catch (APINotFoundException $e) {
+            $this->repository->rollback();
+            throw $e;
+        }
     }
 
     /**
