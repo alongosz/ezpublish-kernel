@@ -152,6 +152,15 @@ abstract class Gateway
     abstract public function load($contentId, $version, array $translations = null);
 
     /**
+     * Bulk-Loads data for the Current Versions of multiple Content items specified by their IDs.
+     *
+     * @param int[] $contentIds
+     *
+     * @return array
+     */
+    abstract public function loadByIds(array $contentIds);
+
+    /**
      * Loads info for a content object identified by its remote ID.
      *
      * Returns an array with the relevant data.
@@ -406,4 +415,13 @@ abstract class Gateway
      * @param int|null $versionNo If specified only copy for a given version number, otherwise all.
      */
     abstract public function copyRelations($originalContentId, $copiedContentId, $versionNo = null);
+
+    /**
+     * Loads info for Contents given by the $contentIds list.
+     *
+     * @param int[] $contentIds
+     *
+     * @return array
+     */
+    abstract public function bulkLoadContentInfo(array $contentIds);
 }

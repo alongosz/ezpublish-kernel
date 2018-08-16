@@ -632,6 +632,20 @@ class ContentService implements ContentServiceInterface
     }
 
     /**
+     * Bulk-load Content items by the list of Content IDs.
+     *
+     * Note: it does not throw exceptions on load, just ignores erroneous Content item.
+     *
+     * @param int[] $contentIds
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Content[] list of Content items with Content Ids as keys
+     */
+    public function loadContentsByIds(array $contentIds)
+    {
+        return $this->service->loadContentsByIds($contentIds);
+    }
+
+    /**
      * Instantiates a new content create struct object.
      *
      * alwaysAvailable is set to the ContentType's defaultAlwaysAvailable

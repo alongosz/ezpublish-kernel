@@ -8,6 +8,7 @@
  */
 namespace eZ\Publish\Core\Persistence\Legacy\Content;
 
+use Exception;
 use eZ\Publish\Core\Persistence\Legacy\Content\Location\Gateway as LocationGateway;
 use eZ\Publish\SPI\Persistence\Content\Handler as BaseContentHandler;
 use eZ\Publish\SPI\Persistence\Content\Type\Handler as ContentTypeHandler;
@@ -711,5 +712,85 @@ class Handler implements BaseContentHandler
         return $this->mapper->extractRelationsFromRows(
             $this->contentGateway->loadReverseRelations($destinationContentId, $type)
         );
+    }
+
+    /**
+     * Returns a list of the metadata objects for multiple Content items.
+     *
+     * @param int[] $contentIds
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content\ContentInfo[] list of ContentInfo with Content Id as key
+     */
+    public function bulkLoadContentInfo(array $contentIds)
+    {
+        $contentIds = array_unique($contentIds);
+
+        $extractedContentInfoList = $this->mapper->extractContentInfoFromRows(
+            $this->contentGateway->bulkLoadContentInfo($contentIds)
+        );
+
+        $contentInfoList = [];
+        foreach ($extractedContentInfoList as $contentInfo) {
+            $contentInfoList[$contentInfo->id] = $contentInfo;
+        }
+
+        return $contentInfoList;
+    }
+
+    /**
+     * Returns data for multiple Content items.
+     *
+     * @param int[] $contentIds
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content[] Content value object
+     */
+    public function bulkLoadContent(array $contentIds)
+    {
+        $rows = $this->contentGateway->loadByIds($contentIds);
+
+        // extract unique Content id => Version No map
+        $idVersionMap = array_map(
+                function (array $row) {
+                    return ['id' => $row['ezcontentobject_id'], 'version' => $row['ezcontentobject_version_version']];
+                },
+                $rows
+        );
+        // remove duplicate entries to optimize query constraints length
+        $idVersionMap = array_map(
+            'unserialize',
+            array_unique(array_map('serialize', $idVersionMap))
+        );
+
+        // group name data per Content Id
+        $contentItemNameData = [];
+        foreach ($this->contentGateway->loadVersionedNameData($idVersionMap) as $nameData) {
+            $contentId = $nameData['ezcontentobject_name_contentobject_id'];
+            $contentItemNameData[$contentId] = $nameData;
+        }
+
+        // group rows per Content Id be able to ignore Content items with erroneous data
+        $contentItemsRows = [];
+        foreach ($rows as $row) {
+            $contentId = $row['ezcontentobject_id'];
+            $contentItemsRows[$contentId] = $row;
+        }
+
+        $contentItems = [];
+        try {
+            foreach ($contentItemsRows as $contentId => $contentItemsRow) {
+                $contentItems[$contentId] = $this->mapper->extractContentFromRows(
+                    $contentItemsRow,
+                    $contentItemNameData[$contentId]
+                );
+            }
+        } catch (Exception $e) {
+            // @todo logger?
+        }
+
+        foreach ($contentItems as $content) {
+            $this->fieldHandler->loadExternalFieldData($content);
+        }
+
+        return $contentItems;
     }
 }

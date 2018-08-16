@@ -4,19 +4,18 @@
  * @copyright Copyright (C) eZ Systems AS. All rights reserved.
  * @license For full copyright and license information view LICENSE file distributed with this source code.
  */
-declare(strict_types=1);
-
 namespace eZ\Bundle\EzPublishCoreBundle\Command;
 
+use Exception;
+use eZ\Publish\API\Repository\ContentService;
 use eZ\Publish\API\Repository\LocationService;
 use eZ\Publish\API\Repository\PermissionResolver;
-use eZ\Publish\API\Repository\SearchService;
 use eZ\Publish\API\Repository\URLAliasService;
 use eZ\Publish\API\Repository\UserService;
-use eZ\Publish\API\Repository\Values\Content\LocationQuery;
-use eZ\Publish\API\Repository\Values\Content\Query\Criterion\Subtree;
-use eZ\Publish\Core\Pagination\Pagerfanta\LocationSearchAdapter;
-use Pagerfanta\Pagerfanta;
+use eZ\Publish\API\Repository\Values\Content\Location;
+use eZ\Publish\Core\Base\Exceptions\NotFoundException;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,7 +28,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class RegenerateUrlAliasesCommand extends Command
 {
-    const DEFAULT_ITERATION_COUNT = 50;
+    const DEFAULT_ITERATION_COUNT = 1000;
     const DEFAULT_REPOSITORY_USER = 'admin';
 
     /**
@@ -43,14 +42,14 @@ class RegenerateUrlAliasesCommand extends Command
     private $userService;
 
     /**
-     * @var \eZ\Publish\API\Repository\SearchService
-     */
-    private $searchService;
-
-    /**
      * @var \eZ\Publish\API\Repository\LocationService
      */
     private $locationService;
+
+    /**
+     * @var \eZ\Publish\API\Repository\ContentService
+     */
+    private $contentService;
 
     /**
      * @var \eZ\Publish\API\Repository\URLAliasService
@@ -58,26 +57,34 @@ class RegenerateUrlAliasesCommand extends Command
     private $urlAliasService;
 
     /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    private $logger;
+
+    /**
      * @param \eZ\Publish\API\Repository\PermissionResolver $permissionResolver
      * @param \eZ\Publish\API\Repository\UserService $userService
-     * @param \eZ\Publish\API\Repository\SearchService $searchService
      * @param \eZ\Publish\API\Repository\LocationService $locationService
+     * @param \eZ\Publish\API\Repository\ContentService $contentService
      * @param \eZ\Publish\API\Repository\URLAliasService $urlAliasService
+     * @param \Psr\Log\LoggerInterface $logger
      */
     public function __construct(
         PermissionResolver $permissionResolver,
         UserService $userService,
-        SearchService $searchService,
         LocationService $locationService,
-        URLAliasService $urlAliasService
+        ContentService $contentService,
+        URLAliasService $urlAliasService,
+        LoggerInterface $logger = null
     ) {
         parent::__construct();
 
         $this->permissionResolver = $permissionResolver;
         $this->userService = $userService;
-        $this->searchService = $searchService;
         $this->locationService = $locationService;
+        $this->contentService = $contentService;
         $this->urlAliasService = $urlAliasService;
+        $this->logger = null !== $logger ? $logger : new NullLogger();
     }
 
     /**
@@ -142,37 +149,29 @@ EOT
     {
         $iterationCount = (int)$input->getOption('iteration-count');
 
-        $query = new LocationQuery(
-            [
-                'filter' => new Subtree('/1/'),
-            ]
-        );
-        $pager = new Pagerfanta(
-            new LocationSearchAdapter($query, $this->searchService)
-        );
-        $pager->setMaxPerPage($iterationCount);
-
+        $locationsCount = $this->locationService->countAllLocations();
         $output->writeln(
             sprintf(
                 '<info>Found %d Locations. Regenerating System URL aliases...</info>',
-                $pager->getNbResults()
+                $locationsCount
             )
         );
 
-        $progressBar = $this->getProgressBar($pager->getNbResults(), $output);
+        $progressBar = $this->getProgressBar($locationsCount, $output);
         $progressBar->start();
 
-        $pagesCount = $pager->getNbPages();
-        for ($currentPage = 1; $currentPage <= $pagesCount; ++$currentPage) {
-            $pager->setCurrentPage($currentPage);
-            $this->processLocations($pager, $progressBar, $output);
+        for ($offset = 0; $offset <= $locationsCount; $offset += $iterationCount) {
+            $locations = $this->locationService->loadAllLocations($iterationCount, $offset);
+            $this->processLocations($locations, $progressBar, $output);
+            // force garbage collection
+            gc_collect_cycles();
         }
         $progressBar->finish();
         $output->writeln('');
 
         $output->writeln('<info>Cleaning up corrupted URL aliases...</info>');
-        $corruptedAliasesCount = $this->urlAliasService->deleteCorruptedUrlAliases();
-        $output->writeln("<info>Done. Deleted {$corruptedAliasesCount} entries.</info>");
+        /*$corruptedAliasesCount = $this->urlAliasService->deleteCorruptedUrlAliases();
+        $output->writeln("<info>Done. Deleted {$corruptedAliasesCount} entries.</info>");*/
     }
 
     /**
@@ -196,32 +195,68 @@ EOT
     /**
      * Process single results page of fetched Locations.
      *
-     * @param \Pagerfanta\Pagerfanta $pager
+     * @param \eZ\Publish\API\Repository\Values\Content\Location[] $locations
      * @param \Symfony\Component\Console\Helper\ProgressBar $progressBar
      * @param \Symfony\Component\Console\Output\OutputInterface $output
      */
-    private function processLocations(Pagerfanta $pager, ProgressBar $progressBar, OutputInterface $output)
-    {
-        foreach ($pager as $location) {
+    private function processLocations(
+        array $locations,
+        ProgressBar $progressBar,
+        OutputInterface $output
+    ) {
+        $contentIds = array_map(
+            function (Location $location) {
+                return $location->contentId;
+            },
+            $locations
+        );
+        $contents = $this->contentService->loadContentsByIds($contentIds);
+        foreach ($locations as $location) {
             try {
-                /** @var \eZ\Publish\API\Repository\Values\Content\Location $location */
-                $this->urlAliasService->refreshSystemUrlAliasesForLocation($location);
-            } catch (\Exception $e) {
-                $contentInfo = $location->getContentInfo();
-                $output->writeln('');
-                $output->writeln(
-                    sprintf(
-                        '<error>Failed processing location %d - [%d] %s (%s: %s)</error>',
-                        $location->id,
-                        $contentInfo->id,
-                        $contentInfo->name,
-                        get_class($e),
-                        $e->getMessage()
-                    )
-                );
+                if (!isset($contents[$location->contentId])) {
+                    throw new NotFoundException(
+                        sprintf(
+                            'Content %d for Location %d not found (or unable to load)',
+                            $location->contentId,
+                            $location->id
+                        ),
+                        $location->contentId
+                    );
+                }
+                $this->urlAliasService->refreshSystemUrlAliasesForLocation($location, $content);
+            } catch (Exception $e) {
+                $this->handleLocationException($e, $location, $output);
             } finally {
                 $progressBar->advance();
             }
         }
+    }
+
+    /**
+     * Decide what to do with Location Exception based on output verbosity level.
+
+     * @param \Exception $e
+     * @param \eZ\Publish\API\Repository\Values\Content\Location $location
+     * @param \Symfony\Component\Console\Output\OutputInterface $output
+     */
+    private function handleLocationException(
+        Exception $e,
+        Location $location,
+        OutputInterface $output
+    ) {
+        $contentInfo = $location->getContentInfo();
+        $msg = sprintf(
+            '<comment>Failed processing location %d - [%d] %s (%s: %s)</comment>',
+            $location->id,
+            $contentInfo->id,
+            $contentInfo->name,
+            get_class($e),
+            $e->getMessage()
+        );
+        // handle running progress bar
+        /*if ($output->isDecorated()) {
+            $output->write("\n");
+        }
+        $this->logger->warning($msg);*/
     }
 }

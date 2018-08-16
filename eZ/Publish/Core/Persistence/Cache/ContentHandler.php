@@ -309,4 +309,32 @@ class ContentHandler extends AbstractHandler implements ContentHandlerInterface
 
         return $content;
     }
+
+    /**
+     * Returns a list of the metadata objects for multiple Content items.
+     *
+     * @param int[] $contentIds
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content\ContentInfo[]
+     */
+    public function bulkLoadContentInfo(array $contentIds)
+    {
+        $this->logger->logCall(__METHOD__, array('contentIds' => implode(',', $contentIds)));
+
+        return $this->persistenceHandler->contentHandler()->bulkLoadContentInfo($contentIds);
+    }
+
+    /**
+     * Returns data for multiple Content items.
+     *
+     * @param int[] $contentIds
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content[] Content value object
+     */
+    public function bulkLoadContent(array $contentIds)
+    {
+        $this->logger->logCall(__METHOD__, array('contentIds' => implode(',', $contentIds)));
+
+        return $this->persistenceHandler->contentHandler()->bulkLoadContent($contentIds);
+    }
 }

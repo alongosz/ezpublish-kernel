@@ -134,6 +134,11 @@ class LocationService implements LocationServiceInterface
         return $this->service->loadLocations($contentInfo, $rootLocation);
     }
 
+    public function loadAllLocations($limit, $offset)
+    {
+        return $this->service->loadAllLocations($limit, $offset);
+    }
+
     /**
      * Loads children which are readable by the current user of a location object sorted by sortField and sortOrder.
      *
@@ -366,5 +371,10 @@ class LocationService implements LocationServiceInterface
     public function newLocationUpdateStruct()
     {
         return $this->service->newLocationUpdateStruct();
+    }
+
+    public function countAllLocations()
+    {
+        return $this->service->countAllLocations();
     }
 }

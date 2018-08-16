@@ -8,6 +8,7 @@
  */
 namespace eZ\Publish\Core\Persistence\Legacy\Content\Location\Gateway;
 
+use Doctrine\DBAL\FetchMode;
 use eZ\Publish\Core\Persistence\Legacy\Content\Location\Gateway;
 use eZ\Publish\Core\Persistence\Database\DatabaseHandler;
 use eZ\Publish\Core\Persistence\Database\SelectQuery;
@@ -1487,5 +1488,78 @@ class DoctrineDatabase extends Gateway
             )
         );
         $q->prepare()->execute();
+    }
+
+    /**
+     * Get the total number of all Locations, except the Root node.
+     *
+     * @see loadAllLocationsData
+     *
+     * @return int
+     */
+    public function countAllLocations()
+    {
+        $query = $this->getAllLocationsQueryBuilder(['count(node_id)']);
+
+        $statement = $query->execute();
+
+        return (int) $statement->fetch(FetchMode::COLUMN);
+    }
+
+    /**
+     * Load data of every Location, except the Root node.
+     *
+     * @param int $limit Paginator limit
+     * @param int $offset Paginator offset
+     *
+     * @return array
+     */
+    public function loadAllLocationsData($limit, $offset)
+    {
+        $query = $this
+            ->getAllLocationsQueryBuilder(
+                [
+                    'node_id',
+                    'priority',
+                    'is_hidden',
+                    'is_invisible',
+                    'remote_id',
+                    'contentobject_id',
+                    'parent_node_id',
+                    'path_identification_string',
+                    'path_string',
+                    'depth',
+                    'sort_field',
+                    'sort_order',
+                ]
+            )
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+        ;
+
+        $statement = $query->execute();
+
+        return $statement->fetchAll(FetchMode::ASSOCIATIVE);
+    }
+
+    /**
+     * Get Query Builder for fetching data of all Locations except the Root node.
+     *
+     * @param array $columns list of columns to fetch
+     *
+     * @return \Doctrine\DBAL\Query\QueryBuilder
+     */
+    private function getAllLocationsQueryBuilder(array $columns)
+    {
+        $query = $this->connection->createQueryBuilder();
+        $query
+            ->select($columns)
+            ->from('ezcontentobject_tree')
+            ->where($query->expr()->neq('node_id', 'parent_node_id'))
+            ->orderBy('depth', 'ASC')
+            ->addOrderBy('node_id', 'ASC')
+        ;
+
+        return $query;
     }
 }

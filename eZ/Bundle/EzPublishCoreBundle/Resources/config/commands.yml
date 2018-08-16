@@ -4,8 +4,9 @@ services:
         arguments:
             - '@=service("ezpublish.api.repository").getPermissionResolver()'
             - '@ezpublish.api.service.user'
-            - '@ezpublish.api.service.search'
             - '@ezpublish.api.service.location'
+            - '@ezpublish.api.service.content'
             - '@ezpublish.api.service.url_alias'
+            - '@?logger'
         tags:
             - { name: console.command }

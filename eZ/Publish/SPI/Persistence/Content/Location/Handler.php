@@ -70,6 +70,19 @@ interface Handler
     public function loadParentLocationsForDraftContent($contentId);
 
     /**
+     * @return int
+     */
+    public function countAllLocations();
+
+    /**
+     * @param int $limit
+     * @param int $offset
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content\Location[]
+     */
+    public function loadAllLocations($limit, $offset);
+
+    /**
      * Copy location object identified by $sourceId, into destination identified by $destinationParentId.
      *
      * Performs a deep copy of the location identified by $sourceId and all of

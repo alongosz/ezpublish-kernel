@@ -629,4 +629,41 @@ class ExceptionConversion extends Gateway
             throw new RuntimeException('Database error', 0, $e);
         }
     }
+
+    /**
+     * Get the total number of all Locations, except the Root node.
+     *
+     * @see loadAllLocationsData
+     *
+     * @return mixed
+     */
+    public function countAllLocations()
+    {
+        try {
+            return $this->innerGateway->countAllLocations();
+        } catch (DBALException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        } catch (PDOException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        }
+    }
+
+    /**
+     * Load data of every Location, except the Root node.
+     *
+     * @param int $limit Paginator limit
+     * @param int $offset Paginator offset
+     *
+     * @return array
+     */
+    public function loadAllLocationsData($limit, $offset)
+    {
+        try {
+            return $this->innerGateway->loadAllLocationsData($limit, $offset);
+        } catch (DBALException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        } catch (PDOException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        }
+    }
 }

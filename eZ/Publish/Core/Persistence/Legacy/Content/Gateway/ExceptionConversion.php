@@ -277,6 +277,24 @@ class ExceptionConversion extends Gateway
     }
 
     /**
+     * Bulk-Loads data for the Current Versions of multiple Content items specified by their IDs.
+     *
+     * @param int[] $contentIds
+     *
+     * @return array
+     */
+    public function loadByIds(array $contentIds)
+    {
+        try {
+            return $this->innerGateway->loadByIds($contentIds);
+        } catch (DBALException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        } catch (PDOException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        }
+    }
+
+    /**
      * Loads data for a content object identified by its remote ID.
      *
      * Returns an array with the relevant data.
@@ -334,6 +352,24 @@ class ExceptionConversion extends Gateway
     {
         try {
             return $this->innerGateway->loadContentInfo($contentId);
+        } catch (DBALException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        } catch (PDOException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        }
+    }
+
+    /**
+     * Loads info for Contents given by the $contentIds list.
+     *
+     * @param int[] $contentIds
+     *
+     * @return array
+     */
+    public function bulkLoadContentInfo(array $contentIds)
+    {
+        try {
+            return $this->innerGateway->bulkLoadContentInfo($contentIds);
         } catch (DBALException $e) {
             throw new RuntimeException('Database error', 0, $e);
         } catch (PDOException $e) {

@@ -76,6 +76,16 @@ interface LocationService
     public function loadLocations(ContentInfo $contentInfo, Location $rootLocation = null);
 
     /**
+     * @todo describe me
+     *
+     * @param int $limit
+     * @param int $offset
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Location[]
+     */
+    public function loadAllLocations($limit, $offset);
+
+    /**
      * Loads children which are readable by the current user of a location object sorted by sortField and sortOrder.
      *
      * @param \eZ\Publish\API\Repository\Values\Content\Location $location
@@ -197,4 +207,13 @@ interface LocationService
      * @return \eZ\Publish\API\Repository\Values\Content\LocationUpdateStruct
      */
     public function newLocationUpdateStruct();
+
+    /**
+     * @todo describe me
+     *
+     * @see loadAllLocations
+     *
+     * @return int Total number of Locations
+     */
+    public function countAllLocations();
 }

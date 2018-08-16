@@ -10,6 +10,7 @@ namespace eZ\Publish\Core\Repository;
 
 use eZ\Publish\API\Repository\ContentService as ContentServiceInterface;
 use eZ\Publish\API\Repository\Repository as RepositoryInterface;
+use eZ\Publish\API\Repository\Values\Content\Location;
 use eZ\Publish\SPI\Persistence\Handler;
 use eZ\Publish\API\Repository\Values\Content\ContentUpdateStruct as APIContentUpdateStruct;
 use eZ\Publish\API\Repository\Values\ContentType\ContentType;
@@ -1917,6 +1918,34 @@ class ContentService implements ContentServiceInterface
     public function loadTranslationInfos(ContentInfo $contentInfo, array $filter = array())
     {
         throw new NotImplementedException(__METHOD__);
+    }
+
+    /**
+     * Bulk-load Content items by the list of Content IDs.
+     *
+     * Note: it does not throw exceptions on load, just ignores erroneous Content item.
+     *
+     * @param int[] $contentIds
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Content[] list of Content items with Content Ids as keys
+     */
+    public function loadContentsByIds(array $contentIds)
+    {
+        $contentIds = array_unique($contentIds);
+
+        $spiContents = $this->persistenceHandler->contentHandler()->bulkLoadContent(
+            $contentIds
+        );
+
+        $contentItems = [];
+        foreach ($spiContents as $spiContent) {
+            $contentId = $spiContent->versionInfo->contentInfo->id;
+            $contentItems[$contentId] = $this->domainMapper->buildContentDomainObject(
+                $spiContent
+            );
+        }
+
+        return $contentItems;
     }
 
     /**

@@ -119,6 +119,20 @@ class LocationHandler extends AbstractHandler implements LocationHandlerInterfac
         return $this->persistenceHandler->locationHandler()->loadByRemoteId($remoteId);
     }
 
+    public function countAllLocations()
+    {
+        $this->logger->logCall(__METHOD__);
+
+        return $this->persistenceHandler->locationHandler()->countAllLocations();
+    }
+
+    public function loadAllLocations($limit, $offset)
+    {
+        $this->logger->logCall(__METHOD__, array('limit' => $limit, 'offset' => $offset));
+
+        return $this->persistenceHandler->locationHandler()->loadAllLocations($limit, $offset);
+    }
+
     /**
      * @see \eZ\Publish\SPI\Persistence\Content\Location\Handler::copySubtree
      */

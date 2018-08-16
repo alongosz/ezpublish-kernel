@@ -8,6 +8,7 @@
  */
 namespace eZ\Publish\API\Repository;
 
+use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Location;
 
 /**
@@ -135,8 +136,9 @@ interface URLAliasService
      * Refresh all system URL aliases for the given Location (and historize outdated if needed).
      *
      * @param \eZ\Publish\API\Repository\Values\Content\Location $location
+     * @param \eZ\Publish\API\Repository\Values\Content\Content $content pre-loaded Content for the $location
      */
-    public function refreshSystemUrlAliasesForLocation(Location $location);
+    public function refreshSystemUrlAliasesForLocation(Location $location, Content $content = null);
 
     /**
      * Delete global, system or custom URL alias pointing to non-existent Locations.

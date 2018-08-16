@@ -258,4 +258,22 @@ interface Handler
      * @return \eZ\Publish\SPI\Persistence\Content The published Content
      */
     public function publish($contentId, $versionNo, MetadataUpdateStruct $metaDataUpdateStruct);
+
+    /**
+     * Returns a list of the metadata objects for multiple Content items.
+     *
+     * @param int[] $contentIds
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content\ContentInfo[]
+     */
+    public function bulkLoadContentInfo(array $contentIds);
+
+    /**
+     * Returns data for multiple Content items.
+     *
+     * @param int[] $contentIds
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content[] Content value object
+     */
+    public function bulkLoadContent(array $contentIds);
 }

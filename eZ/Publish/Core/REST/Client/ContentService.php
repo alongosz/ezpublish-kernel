@@ -6,7 +6,6 @@
  * @copyright Copyright (C) eZ Systems AS. All rights reserved.
  * @license For full copyright and license information view LICENSE file distributed with this source code.
  */
-
 namespace eZ\Publish\Core\REST\Client;
 
 use eZ\Publish\API\Repository\ContentService as APIContentService;
@@ -218,9 +217,9 @@ class ContentService implements APIContentService, Sessionable
      */
     protected function isErrorResponse(Message $response)
     {
-        return (
+        return
             strpos($response->headers['Content-Type'], 'application/vnd.ez.api.ErrorMessage') === 0
-        );
+        ;
     }
 
     /**
@@ -744,6 +743,18 @@ class ContentService implements APIContentService, Sessionable
      * @since 5.0
      */
     public function loadTranslationInfos(ContentInfo $contentInfo, array $filter = array())
+    {
+        throw new \Exception('@todo: Implement.');
+    }
+
+    /**
+     * Bulk-load Content items by the list of Content IDs.
+     *
+     * @param int[] $contentIds
+     *
+     * @throws \Exception Not implemented
+     */
+    public function loadContentsByIds(array $contentIds)
     {
         throw new \Exception('@todo: Implement.');
     }

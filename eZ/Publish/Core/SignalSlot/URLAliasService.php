@@ -9,6 +9,7 @@
 namespace eZ\Publish\Core\SignalSlot;
 
 use eZ\Publish\API\Repository\URLAliasService as URLAliasServiceInterface;
+use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Location;
 use eZ\Publish\Core\SignalSlot\Signal\LocationService\UpdateLocationSignal;
 use eZ\Publish\Core\SignalSlot\Signal\URLAliasService\CreateUrlAliasSignal;
@@ -241,10 +242,11 @@ class URLAliasService implements URLAliasServiceInterface
      * Refresh all system URL aliases for the given Location (and historize outdated if needed).
      *
      * @param \eZ\Publish\API\Repository\Values\Content\Location $location
+     * @param \eZ\Publish\API\Repository\Values\Content\Content $content pre-loaded Content for the $location
      */
-    public function refreshSystemUrlAliasesForLocation(Location $location)
+    public function refreshSystemUrlAliasesForLocation(Location $location, Content $content = null)
     {
-        $this->service->refreshSystemUrlAliasesForLocation($location);
+        $this->service->refreshSystemUrlAliasesForLocation($location, $content);
 
         $this->signalDispatcher->emit(
             new UpdateLocationSignal(

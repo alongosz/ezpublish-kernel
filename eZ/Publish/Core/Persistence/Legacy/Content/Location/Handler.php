@@ -163,6 +163,18 @@ class Handler implements BaseLocationHandler
         return $this->locationMapper->createLocationsFromRows($rows);
     }
 
+    public function countAllLocations()
+    {
+        return $this->locationGateway->countAllLocations();
+    }
+
+    public function loadAllLocations($limit, $offset)
+    {
+        $rows = $this->locationGateway->loadAllLocationsData($limit, $offset);
+
+        return $this->locationMapper->createLocationsFromRows($rows);
+    }
+
     /**
      * Returns an array of default content states with content state group id as key.
      *

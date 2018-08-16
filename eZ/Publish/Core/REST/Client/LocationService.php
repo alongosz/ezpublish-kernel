@@ -6,7 +6,6 @@
  * @copyright Copyright (C) eZ Systems AS. All rights reserved.
  * @license For full copyright and license information view LICENSE file distributed with this source code.
  */
-
 namespace eZ\Publish\Core\REST\Client;
 
 use eZ\Publish\API\Repository\LocationService as APILocationService;
@@ -230,6 +229,19 @@ class LocationService implements APILocationService, Sessionable
     }
 
     /**
+     * @param int $limit
+     * @param int $offset
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Location[]|void
+     *
+     * @throws \Exception
+     */
+    public function loadAllLocations($limit, $offset)
+    {
+        throw new \Exception('@todo: Implement.');
+    }
+
+    /**
      * Loads children which are readable by the current user of a location object sorted by sortField and sortOrder.
      *
      * @param \eZ\Publish\API\Repository\Values\Content\Location $location
@@ -353,6 +365,11 @@ class LocationService implements APILocationService, Sessionable
      * @param \eZ\Publish\API\Repository\Values\Content\Location $newParentLocation
      */
     public function moveSubtree(Location $location, Location $newParentLocation)
+    {
+        throw new \Exception('@todo: Implement.');
+    }
+
+    public function countAllLocations()
     {
         throw new \Exception('@todo: Implement.');
     }

@@ -11,6 +11,7 @@ namespace eZ\Publish\Core\Repository;
 use eZ\Publish\API\Repository\Exceptions\NotFoundException as APINotFoundException;
 use eZ\Publish\API\Repository\URLAliasService as URLAliasServiceInterface;
 use eZ\Publish\API\Repository\Repository as RepositoryInterface;
+use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\SPI\Persistence\Content\UrlAlias\Handler;
 use eZ\Publish\API\Repository\Values\Content\Location;
 use eZ\Publish\API\Repository\Values\Content\URLAlias;
@@ -727,12 +728,13 @@ class URLAliasService implements URLAliasServiceInterface
      * Refresh all system URL aliases for the given Location (and historize outdated if needed).
      *
      * @param \eZ\Publish\API\Repository\Values\Content\Location $location
+     * @param \eZ\Publish\API\Repository\Values\Content\Content $content
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\ForbiddenException
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      */
-    public function refreshSystemUrlAliasesForLocation(Location $location)
+    public function refreshSystemUrlAliasesForLocation(Location $location, Content $content = null)
     {
         if (!$this->repository->getPermissionResolver()->canUser('content', 'urltranslator', $location)) {
             throw new UnauthorizedException('content', 'urltranslator');
@@ -740,7 +742,24 @@ class URLAliasService implements URLAliasServiceInterface
 
         $this->repository->beginTransaction();
         try {
-            $content = $this->repository->getContentService()->loadContent($location->contentInfo->id);
+            if ($content === null) {
+                $content = $this->repository->getContentService()->loadContent(
+                    $location->contentInfo->id
+                );
+            } else {
+                // perform sanity check
+                if ($location->contentId !== $content->id) {
+                    throw new InvalidArgumentException(
+                        '$content',
+                        sprintf(
+                            'Location %d expects Content %d but got %d',
+                            $location->id,
+                            $location->contentId,
+                            $content->id
+                        )
+                    );
+                }
+            }
             $urlAliasNames = $this->nameSchemaService->resolveUrlAliasSchema($content);
             foreach ($urlAliasNames as $languageCode => $name) {
                 $this->urlAliasHandler->publishUrlAliasForLocation(

@@ -9,6 +9,7 @@
 namespace eZ\Publish\Core\Persistence\Legacy\Content\Gateway;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\FetchMode;
 use eZ\Publish\Core\Persistence\Legacy\Content\Gateway;
 use eZ\Publish\Core\Persistence\Legacy\Content\Gateway\DoctrineDatabase\QueryBuilder;
 use eZ\Publish\Core\Persistence\Database\DatabaseHandler;
@@ -850,6 +851,69 @@ class DoctrineDatabase extends Gateway
     }
 
     /**
+     * Bulk-Loads data for the Current Versions of multiple Content items specified by their IDs.
+     *
+     * @param int[] $contentIds
+     *
+     * @return array
+     */
+    public function loadByIds(array $contentIds)
+    {
+        $queryBuilder = $this->connection->createQueryBuilder();
+        $queryBuilder
+            ->select(
+                $this->createAliasedColumnsList(
+                    $this->getTableColumnListForContentSelect(),
+                    [
+                        'ezcontentobject' => 'o',
+                        'ezcontentobject_version' => 'v',
+                        'ezcontentobject_attribute' => 'a',
+                        'ezcontentobject_tree' => 't',
+                    ]
+                )
+            )
+            ->from('ezcontentobject', 'o')
+            ->join(
+                'o',
+                'ezcontentobject_version',
+                'v',
+                $queryBuilder->expr()->andX(
+                    $queryBuilder->expr()->eq('o.id', 'v.contentobject_id'),
+                    $queryBuilder->expr()->eq('o.current_version', 'v.version')
+                )
+            )
+            ->join(
+                'v',
+                'ezcontentobject_attribute',
+                'a',
+                $queryBuilder->expr()->andX(
+                    $queryBuilder->expr()->eq('v.contentobject_id', 'a.contentobject_id'),
+                    $queryBuilder->expr()->eq('v.version', 'a.version')
+                )
+            )
+            ->leftJoin(
+                'o',
+                'ezcontentobject_tree',
+                't',
+                $queryBuilder->expr()->andX(
+                    $queryBuilder->expr()->eq('o.id', 't.contentobject_id'),
+                    $queryBuilder->expr()->eq('t.main_node_id', 't.node_id')
+                )
+            )
+            ->where(
+                $queryBuilder->expr()->in(
+                    'o.id',
+                    $contentIds
+                )
+            )
+        ;
+
+        $statement = $queryBuilder->execute();
+
+        return $statement->fetchAll(FetchMode::ASSOCIATIVE);
+    }
+
+    /**
      * @see loadContentInfo(), loadContentInfoByRemoteId(), loadContentInfoByLocationId()
      *
      * @param \eZ\Publish\Core\Persistence\Database\SelectQuery $query
@@ -971,6 +1035,40 @@ class DoctrineDatabase extends Gateway
         }
 
         return $row;
+    }
+
+    /**
+     * Loads info for Contents given by the $contentIds list.
+     *
+     * @param int[] $contentIds
+     *
+     * @return array
+     */
+    public function bulkLoadContentInfo(array $contentIds)
+    {
+        $queryBuilder = $this->connection->createQueryBuilder();
+        $queryBuilder
+            ->select('c.*', 't.main_node_id as ezcontentobject_tree_main_node_id')
+            ->from('ezcontentobject', 'c')
+            ->leftJoin(
+                'c',
+                'ezcontentobject_tree',
+                't',
+                $queryBuilder->expr()->andX(
+                    $queryBuilder->expr()->eq('t.contentobject_id', 'c.id'),
+                    $queryBuilder->expr()->eq('t.main_node_id', 't.node_id')
+                )
+            )
+            ->where(
+                $queryBuilder->expr()->in(
+                    'c.id',
+                    $contentIds
+                )
+            );
+
+        $statement = $queryBuilder->execute();
+
+        return $statement->fetchAll(FetchMode::ASSOCIATIVE);
     }
 
     /**
@@ -1984,5 +2082,89 @@ class DoctrineDatabase extends Gateway
         $stmt->bindValue('copied_id', $copiedContentId, PDO::PARAM_INT);
 
         $stmt->execute();
+    }
+
+    /**
+     * Get list of columns per table, necessary to select and map Content item.
+     *
+     * @return array
+     */
+    private function getTableColumnListForContentSelect()
+    {
+        return [
+            'ezcontentobject' => [
+                'id',
+                'contentclass_id',
+                'section_id',
+                'owner_id',
+                'remote_id',
+                'current_version',
+                'initial_language_id',
+                'modified',
+                'published',
+                'status',
+                'name',
+                'language_mask',
+            ],
+            'ezcontentobject_version' => [
+                'id',
+                'version',
+                'modified',
+                'creator_id',
+                'created',
+                'status',
+                'contentobject_id',
+                'language_mask',
+                'initial_language_id',
+            ],
+            'ezcontentobject_attribute' => [
+                'id',
+                'contentclassattribute_id',
+                'data_type_string',
+                'language_code',
+                'language_id',
+                'version',
+                'data_float',
+                'data_int',
+                'data_text',
+                'sort_key_int',
+                'sort_key_string',
+            ],
+            'ezcontentobject_tree' => [
+                'main_node_id',
+            ],
+        ];
+    }
+
+    /**
+     * Create list of table columns aliased as <code><table_name>_<column_name></code>.
+     *
+     * The list of columns conforms to persistence layer mappers expectations.
+     *
+     * @param array $tableColumns list in the form of ['&lt;table_name&gt;' => &lt;columns&gt;]
+     * @param array $tableAliases list of used table aliases in the form of ['&lt;table_name&gt;' => '&lt;alias&gt;']
+     *
+     * @return array list of aliases column
+     */
+    private function createAliasedColumnsList(array $tableColumns, array $tableAliases)
+    {
+        $aliasedColumns = [];
+        foreach ($tableColumns as $table => $columns) {
+            if (empty($tableAliases[$table])) {
+                throw new \RuntimeException("Undefined alias for the {$table} table");
+            }
+
+            foreach ($columns as $column) {
+                $aliasedColumns[] = sprintf(
+                    '%s.%s AS %s_%s',
+                    $tableAliases[$table],
+                    $this->connection->quoteIdentifier($column),
+                    $table,
+                    $column
+                );
+            }
+        }
+
+        return $aliasedColumns;
     }
 }

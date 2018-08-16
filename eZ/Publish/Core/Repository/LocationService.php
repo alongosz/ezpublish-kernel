@@ -14,6 +14,8 @@ use eZ\Publish\API\Repository\Values\Content\LocationCreateStruct;
 use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\API\Repository\Values\Content\Location as APILocation;
 use eZ\Publish\API\Repository\Values\Content\LocationList;
+use eZ\Publish\Core\Base\Exceptions\NotFoundException;
+use eZ\Publish\SPI\Persistence\Content\Location as SPILocation;
 use eZ\Publish\SPI\Persistence\Content\Location\UpdateStruct;
 use eZ\Publish\API\Repository\LocationService as LocationServiceInterface;
 use eZ\Publish\API\Repository\Repository as RepositoryInterface;
@@ -251,6 +253,38 @@ class LocationService implements LocationServiceInterface
             if ($this->repository->canUser('content', 'read', $location->getContentInfo(), $location)) {
                 $locations[] = $location;
             }
+        }
+
+        return $locations;
+    }
+
+    /**
+     * @param int $limit
+     * @param int $offset
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Location[]
+     *
+     * @throws \eZ\Publish\Core\Base\Exceptions\NotFoundException
+     */
+    public function loadAllLocations($limit, $offset)
+    {
+        $spiLocations = $this->persistenceHandler->locationHandler()->loadAllLocations($limit, $offset);
+
+        $contentIds = array_map(
+            function (SPILocation $spiLocation) {
+                return $spiLocation->contentId;
+            },
+            $spiLocations
+        );
+
+        $spiContentInfos = $this->persistenceHandler->contentHandler()->bulkLoadContentInfo($contentIds);
+
+        $locations = [];
+        foreach ($spiLocations as $spiLocation) {
+            if (!isset($spiContentInfos[$spiLocation->contentId])) {
+                throw new NotFoundException('Content', $spiLocation->contentId);
+            }
+            $locations[] = $this->domainMapper->buildLocationDomainObject($spiLocation, $spiContentInfos[$spiLocation->contentId]);
         }
 
         return $locations;
@@ -731,5 +765,10 @@ class LocationService implements LocationServiceInterface
     public function newLocationUpdateStruct()
     {
         return new LocationUpdateStruct();
+    }
+
+    public function countAllLocations()
+    {
+        return $this->persistenceHandler->locationHandler()->countAllLocations();
     }
 }
