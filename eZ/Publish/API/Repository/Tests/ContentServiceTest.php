@@ -9,6 +9,7 @@
 namespace eZ\Publish\API\Repository\Tests;
 
 use DOMDocument;
+use eZ\Publish\API\Repository\Exceptions\UnauthorizedException;
 use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\API\Repository\Values\Content\Field;
 use eZ\Publish\API\Repository\Values\Content\Location;
@@ -4735,6 +4736,37 @@ XML
             $loadedContent1->getFieldValue('name', 'eng-US'),
             $loadedContent2->getFieldValue('name', 'eng-US')
         );
+    }
+
+    /**
+     * Test loading list of Content items.
+     */
+    public function testLoadContentList()
+    {
+        $repository = $this->getRepository();
+        $contentService = $repository->getContentService();
+        $locationService = $repository->getLocationService();
+
+        $allLocationsCount = $locationService->countAllLocations();
+        $contentIds = array_map(
+            function (Location $location) {
+                return $location->contentId;
+            },
+            $locationService->loadAllLocations($allLocationsCount, 0)
+        );
+
+        $contentList = $contentService->loadContentList($contentIds);
+        self::assertCount(count($contentIds), $contentList);
+        foreach ($contentList as $content) {
+            try {
+                $loadedContent = $contentService->loadContent($content->id);
+                self::assertEquals($loadedContent, $content);
+            } catch (NotFoundException $e) {
+                self::fail("Failed to load Content {$content->id}: {$e->getMessage()}");
+            } catch (UnauthorizedException $e) {
+                self::fail("Failed to load Content {$content->id}: {$e->getMessage()}");
+            }
+        }
     }
 
     /**
