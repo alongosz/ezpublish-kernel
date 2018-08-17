@@ -270,4 +270,14 @@ interface Handler
      * @return \eZ\Publish\SPI\Persistence\Content The published Content
      */
     public function publish($contentId, $versionNo, MetadataUpdateStruct $metaDataUpdateStruct);
+
+    /**
+     * Returns data for multiple published Content items.
+     *
+     * @param int[] $contentIds
+     * @param string[] $translations
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content[] SPI Content value object
+     */
+    public function loadContentList(array $contentIds, array $translations = null);
 }

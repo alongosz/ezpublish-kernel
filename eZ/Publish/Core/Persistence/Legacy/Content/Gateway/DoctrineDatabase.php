@@ -9,6 +9,8 @@
 namespace eZ\Publish\Core\Persistence\Legacy\Content\Gateway;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\FetchMode;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Query\QueryBuilder as DoctrineQueryBuilder;
 use eZ\Publish\Core\Persistence\Legacy\Content\Gateway;
 use eZ\Publish\Core\Persistence\Legacy\Content\Gateway\DoctrineDatabase\QueryBuilder;
@@ -1968,5 +1970,175 @@ class DoctrineDatabase extends Gateway
         $stmt->bindValue('copied_id', $copiedContentId, PDO::PARAM_INT);
 
         $stmt->execute();
+    }
+
+    /**
+     * Bulk-Loads data for the published Versions of multiple Content items specified by their IDs.
+     *
+     * @param int[] $contentIds
+     * @param string[] $translations
+     *
+     * @return array
+     */
+    public function loadContentList(array $contentIds, array $translations = null)
+    {
+        $queryBuilder = $this->connection->createQueryBuilder();
+        $queryBuilder
+            ->select(
+                $this->createAliasedColumnsList(
+                    $this->getTableColumnListForContentSelect(),
+                    [
+                        'ezcontentobject' => 'o',
+                        'ezcontentobject_version' => 'v',
+                        'ezcontentobject_attribute' => 'a',
+                        'ezcontentobject_tree' => 't',
+                    ]
+                )
+            )
+            ->from('ezcontentobject', 'o')
+            ->join(
+                'o',
+                'ezcontentobject_version',
+                'v',
+                $queryBuilder->expr()->andX(
+                    $queryBuilder->expr()->eq('o.id', 'v.contentobject_id'),
+                    $queryBuilder->expr()->eq('o.current_version', 'v.version'),
+                    $queryBuilder->expr()->eq(
+                        'o.status',
+                        $queryBuilder->createPositionalParameter(
+                            ContentInfo::STATUS_PUBLISHED,
+                            ParameterType::INTEGER
+                        )
+                    )
+                )
+            )
+            ->join(
+                'v',
+                'ezcontentobject_attribute',
+                'a',
+                $queryBuilder->expr()->andX(
+                    $queryBuilder->expr()->eq('v.contentobject_id', 'a.contentobject_id'),
+                    $queryBuilder->expr()->eq('v.version', 'a.version')
+                )
+            )
+            ->leftJoin(
+                'o',
+                'ezcontentobject_tree',
+                't',
+                $queryBuilder->expr()->andX(
+                    $queryBuilder->expr()->eq('o.id', 't.contentobject_id'),
+                    $queryBuilder->expr()->eq('t.main_node_id', 't.node_id')
+                )
+            )
+            ->where(
+                $queryBuilder->expr()->in(
+                    'o.id',
+                    $queryBuilder->createPositionalParameter(
+                        $contentIds,
+                        Connection::PARAM_INT_ARRAY
+                    )
+                )
+            );
+
+        if (!empty($translations)) {
+            $queryBuilder
+                ->andWhere(
+                    $queryBuilder->expr()->in(
+                        'a.language_code',
+                        $queryBuilder->createPositionalParameter(
+                            $translations,
+                            Connection::PARAM_STR_ARRAY
+                        )
+                    )
+                );
+        }
+
+        $statement = $queryBuilder->execute();
+
+        return $statement->fetchAll(FetchMode::ASSOCIATIVE);
+    }
+
+    /**
+     * Get list of columns per table, necessary to select and map Content item.
+     *
+     * @return array
+     */
+    private function getTableColumnListForContentSelect()
+    {
+        return [
+            'ezcontentobject' => [
+                'id',
+                'contentclass_id',
+                'section_id',
+                'owner_id',
+                'remote_id',
+                'current_version',
+                'initial_language_id',
+                'modified',
+                'published',
+                'status',
+                'name',
+                'language_mask',
+            ],
+            'ezcontentobject_version' => [
+                'id',
+                'version',
+                'modified',
+                'creator_id',
+                'created',
+                'status',
+                'contentobject_id',
+                'language_mask',
+                'initial_language_id',
+            ],
+            'ezcontentobject_attribute' => [
+                'id',
+                'contentclassattribute_id',
+                'data_type_string',
+                'language_code',
+                'language_id',
+                'version',
+                'data_float',
+                'data_int',
+                'data_text',
+                'sort_key_int',
+                'sort_key_string',
+            ],
+            'ezcontentobject_tree' => [
+                'main_node_id',
+            ],
+        ];
+    }
+
+    /**
+     * Create list of table columns aliased as <code><table_name>_<column_name></code>.
+     *
+     * The list of columns conforms to persistence layer mappers expectations.
+     *
+     * @param array $tableColumns list in the form of ['&lt;table_name&gt;' => &lt;columns&gt;]
+     * @param array $tableAliases list of used table aliases in the form of ['&lt;table_name&gt;' => '&lt;alias&gt;']
+     *
+     * @return array list of aliases column
+     */
+    private function createAliasedColumnsList(array $tableColumns, array $tableAliases)
+    {
+        $aliasedColumns = [];
+        foreach ($tableColumns as $table => $columns) {
+            if (empty($tableAliases[$table])) {
+                throw new \RuntimeException("Undefined alias for the {$table} table");
+            }
+
+            foreach ($columns as $column) {
+                $aliasedColumns[] = sprintf(
+                    '%s.%s AS %s_%s',
+                    $tableAliases[$table],
+                    $this->connection->quoteIdentifier($column),
+                    $table,
+                    $column
+                );
+            }
+        }
+
+        return $aliasedColumns;
     }
 }

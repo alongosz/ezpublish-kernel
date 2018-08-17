@@ -315,4 +315,21 @@ class ContentHandler extends AbstractHandler implements ContentHandlerInterface
 
         return $content;
     }
+
+    /**
+     * Returns data for multiple published Content items.
+     *
+     * @param array $contentIds
+     * @param array|null $translations
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content[]
+     */
+    public function loadContentList(array $contentIds, array $translations = null)
+    {
+        // Intentionally not caching until we can handle caching multiple items (see 7.x)
+        return $this->persistenceHandler->contentHandler()->loadContentList(
+            $contentIds,
+            $translations
+        );
+    }
 }

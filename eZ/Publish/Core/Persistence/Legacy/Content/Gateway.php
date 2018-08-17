@@ -152,6 +152,16 @@ abstract class Gateway
     abstract public function load($contentId, $version, array $translations = null);
 
     /**
+     * Bulk-Loads data for the published Versions of multiple Content items specified by their IDs.
+     *
+     * @param int[] $contentIds
+     * @param string[] $translations
+     *
+     * @return array
+     */
+    abstract public function loadContentList(array $contentIds, array $translations = null);
+
+    /**
      * Loads info for a content object identified by its remote ID.
      *
      * Returns an array with the relevant data.
