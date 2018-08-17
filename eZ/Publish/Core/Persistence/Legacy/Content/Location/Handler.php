@@ -521,4 +521,29 @@ class Handler implements BaseLocationHandler
     {
         $this->treeHandler->changeMainLocation($contentId, $locationId);
     }
+
+    /**
+     * Get the total number of all existing Locations. Can be combined with loadAllLocations.
+     *
+     * @return int
+     */
+    public function countAllLocations()
+    {
+        return $this->locationGateway->countAllLocations();
+    }
+
+    /**
+     * Bulk-load all existing Locations, constrained by $limit and $offset to paginate results.
+     *
+     * @param int $limit
+     * @param int $offset
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content\Location[]
+     */
+    public function loadAllLocations($limit, $offset)
+    {
+        $rows = $this->locationGateway->loadAllLocationsData($limit, $offset);
+
+        return $this->locationMapper->createLocationsFromRows($rows);
+    }
 }

@@ -14,6 +14,8 @@ use eZ\Publish\API\Repository\Values\Content\LocationCreateStruct;
 use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\API\Repository\Values\Content\Location as APILocation;
 use eZ\Publish\API\Repository\Values\Content\LocationList;
+use eZ\Publish\Core\Base\Exceptions\NotFoundException;
+use eZ\Publish\SPI\Persistence\Content\Location as SPILocation;
 use eZ\Publish\SPI\Persistence\Content\Location\UpdateStruct;
 use eZ\Publish\API\Repository\LocationService as LocationServiceInterface;
 use eZ\Publish\API\Repository\Repository as RepositoryInterface;
@@ -731,5 +733,52 @@ class LocationService implements LocationServiceInterface
     public function newLocationUpdateStruct()
     {
         return new LocationUpdateStruct();
+    }
+
+    /**
+     * Get the total number of all existing Locations. Can be combined with loadAllLocations.
+     *
+     * @see loadAllLocations
+     *
+     * @return int Total number of Locations
+     */
+    public function countAllLocations()
+    {
+        return $this->persistenceHandler->locationHandler()->countAllLocations();
+    }
+
+    /**
+     * Bulk-load all existing Locations, constrained by $limit and $offset to paginate results.
+     *
+     * @param int $limit
+     * @param int $offset
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Location[]
+     *
+     * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\Core\Base\Exceptions\NotFoundException
+     */
+    public function loadAllLocations($limit, $offset)
+    {
+        $spiLocations = $this->persistenceHandler->locationHandler()->loadAllLocations($limit, $offset);
+        $contentIds = array_unique(
+            array_map(
+                function (SPILocation $spiLocation) {
+                    return $spiLocation->contentId;
+                },
+                $spiLocations
+            )
+        );
+
+        $spiContentInfoList = $this->persistenceHandler->contentHandler()->loadContentInfoList($contentIds);
+        $locations = [];
+        foreach ($spiLocations as $spiLocation) {
+            if (!isset($spiContentInfoList[$spiLocation->contentId])) {
+                throw new NotFoundException('Content', $spiLocation->contentId);
+            }
+            $locations[] = $this->domainMapper->buildLocationDomainObject($spiLocation, $spiContentInfoList[$spiLocation->contentId]);
+        }
+
+        return $locations;
     }
 }
