@@ -1980,31 +1980,55 @@ class DoctrineDatabase extends Gateway
      *
      * @return array
      */
-    public function loadContentList(array $contentIds, array $translations = null)
+    public function loadPublishedContentList(array $contentIds, array $translations = null)
     {
+        $contentIds = array_unique($contentIds);
+
         $queryBuilder = $this->connection->createQueryBuilder();
         $queryBuilder
             ->select(
-                $this->createAliasedColumnsList(
-                    $this->getTableColumnListForContentSelect(),
-                    [
-                        'ezcontentobject' => 'o',
-                        'ezcontentobject_version' => 'v',
-                        'ezcontentobject_attribute' => 'a',
-                        'ezcontentobject_tree' => 't',
-                    ]
-                )
+                'c.id AS ezcontentobject_id',
+                'c.contentclass_id AS ezcontentobject_contentclass_id',
+                'c.section_id AS ezcontentobject_section_id',
+                'c.owner_id AS ezcontentobject_owner_id',
+                'c.remote_id AS ezcontentobject_remote_id',
+                'c.current_version AS ezcontentobject_current_version',
+                'c.initial_language_id AS ezcontentobject_initial_language_id',
+                'c.modified AS ezcontentobject_modified',
+                'c.published AS ezcontentobject_published',
+                'c.status AS ezcontentobject_status',
+                'c.name AS ezcontentobject_name',
+                'c.language_mask AS ezcontentobject_language_mask',
+                'v.id AS ezcontentobject_version_id',
+                'v.version AS ezcontentobject_version_version',
+                'v.modified AS ezcontentobject_version_modified',
+                'v.creator_id AS ezcontentobject_version_creator_id',
+                'v.created AS ezcontentobject_version_created',
+                'v.status AS ezcontentobject_version_status',
+                'v.language_mask AS ezcontentobject_version_language_mask',
+                'v.initial_language_id AS ezcontentobject_version_initial_language_id',
+                'a.id AS ezcontentobject_attribute_id',
+                'a.contentclassattribute_id AS ezcontentobject_attribute_contentclassattribute_id',
+                'a.data_type_string AS ezcontentobject_attribute_data_type_string',
+                'a.language_code AS ezcontentobject_attribute_language_code',
+                'a.language_id AS ezcontentobject_attribute_language_id',
+                'a.data_float AS ezcontentobject_attribute_data_float',
+                'a.data_int AS ezcontentobject_attribute_data_int',
+                'a.data_text AS ezcontentobject_attribute_data_text',
+                'a.sort_key_int AS ezcontentobject_attribute_sort_key_int',
+                'a.sort_key_string AS ezcontentobject_attribute_sort_key_string',
+                't.main_node_id AS ezcontentobject_tree_main_node_id'
             )
-            ->from('ezcontentobject', 'o')
+            ->from('ezcontentobject', 'c')
             ->join(
-                'o',
+                'c',
                 'ezcontentobject_version',
                 'v',
                 $queryBuilder->expr()->andX(
-                    $queryBuilder->expr()->eq('o.id', 'v.contentobject_id'),
-                    $queryBuilder->expr()->eq('o.current_version', 'v.version'),
+                    $queryBuilder->expr()->eq('c.id', 'v.contentobject_id'),
+                    $queryBuilder->expr()->eq('c.current_version', 'v.version'),
                     $queryBuilder->expr()->eq(
-                        'o.status',
+                        'c.status',
                         $queryBuilder->createPositionalParameter(
                             ContentInfo::STATUS_PUBLISHED,
                             ParameterType::INTEGER
@@ -2022,17 +2046,17 @@ class DoctrineDatabase extends Gateway
                 )
             )
             ->leftJoin(
-                'o',
+                'c',
                 'ezcontentobject_tree',
                 't',
                 $queryBuilder->expr()->andX(
-                    $queryBuilder->expr()->eq('o.id', 't.contentobject_id'),
+                    $queryBuilder->expr()->eq('c.id', 't.contentobject_id'),
                     $queryBuilder->expr()->eq('t.main_node_id', 't.node_id')
                 )
             )
             ->where(
                 $queryBuilder->expr()->in(
-                    'o.id',
+                    'c.id',
                     $queryBuilder->createPositionalParameter(
                         $contentIds,
                         Connection::PARAM_INT_ARRAY
@@ -2056,89 +2080,5 @@ class DoctrineDatabase extends Gateway
         $statement = $queryBuilder->execute();
 
         return $statement->fetchAll(FetchMode::ASSOCIATIVE);
-    }
-
-    /**
-     * Get list of columns per table, necessary to select and map Content item.
-     *
-     * @return array
-     */
-    private function getTableColumnListForContentSelect()
-    {
-        return [
-            'ezcontentobject' => [
-                'id',
-                'contentclass_id',
-                'section_id',
-                'owner_id',
-                'remote_id',
-                'current_version',
-                'initial_language_id',
-                'modified',
-                'published',
-                'status',
-                'name',
-                'language_mask',
-            ],
-            'ezcontentobject_version' => [
-                'id',
-                'version',
-                'modified',
-                'creator_id',
-                'created',
-                'status',
-                'contentobject_id',
-                'language_mask',
-                'initial_language_id',
-            ],
-            'ezcontentobject_attribute' => [
-                'id',
-                'contentclassattribute_id',
-                'data_type_string',
-                'language_code',
-                'language_id',
-                'version',
-                'data_float',
-                'data_int',
-                'data_text',
-                'sort_key_int',
-                'sort_key_string',
-            ],
-            'ezcontentobject_tree' => [
-                'main_node_id',
-            ],
-        ];
-    }
-
-    /**
-     * Create list of table columns aliased as <code><table_name>_<column_name></code>.
-     *
-     * The list of columns conforms to persistence layer mappers expectations.
-     *
-     * @param array $tableColumns list in the form of ['&lt;table_name&gt;' => &lt;columns&gt;]
-     * @param array $tableAliases list of used table aliases in the form of ['&lt;table_name&gt;' => '&lt;alias&gt;']
-     *
-     * @return array list of aliases column
-     */
-    private function createAliasedColumnsList(array $tableColumns, array $tableAliases)
-    {
-        $aliasedColumns = [];
-        foreach ($tableColumns as $table => $columns) {
-            if (empty($tableAliases[$table])) {
-                throw new \RuntimeException("Undefined alias for the {$table} table");
-            }
-
-            foreach ($columns as $column) {
-                $aliasedColumns[] = sprintf(
-                    '%s.%s AS %s_%s',
-                    $tableAliases[$table],
-                    $this->connection->quoteIdentifier($column),
-                    $table,
-                    $column
-                );
-            }
-        }
-
-        return $aliasedColumns;
     }
 }

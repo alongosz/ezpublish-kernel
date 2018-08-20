@@ -4755,7 +4755,7 @@ XML
             $locationService->loadAllLocations($allLocationsCount, 0)
         );
 
-        $contentList = $contentService->loadContentList($contentIds);
+        $contentList = $contentService->loadPublishedContentListByContentInfo($contentIds);
         self::assertCount(count($contentIds), $contentList);
         foreach ($contentList as $content) {
             try {

@@ -26,6 +26,7 @@ use eZ\Publish\Core\Persistence\TransformationProcessor\PcreCompiler;
 use eZ\Publish\Core\Persistence\Utf8Converter;
 use eZ\Publish\SPI\Persistence\Content\UrlAlias;
 use eZ\Publish\Core\Base\Exceptions\NotFoundException;
+use eZ\Publish\SPI\Persistence\TransactionHandler;
 
 /**
  * Test case for UrlAliasHandler.
@@ -5348,6 +5349,13 @@ class UrlAliasHandlerTest extends TestCase
                     '',
                     false
                 ),
+                $this->getMock(
+                    'eZ\\Publish\\SPI\\Persistence\\TransactionHandler',
+                    [],
+                    [],
+                    '',
+                    false
+                ),
             )
         );
 
@@ -5361,9 +5369,11 @@ class UrlAliasHandlerTest extends TestCase
     {
         $languageHandler = $this->getLanguageHandler();
         $languageMaskGenerator = $this->getLanguageMaskGenerator();
+        $databaseHandler = $this->getDatabaseHandler();
         $gateway = new DoctrineDatabase(
-            $this->getDatabaseHandler(),
-            $languageMaskGenerator
+            $databaseHandler,
+            $languageMaskGenerator,
+            $databaseHandler->getConnection()
         );
         $mapper = new Mapper($languageMaskGenerator);
         $slugConverter = new SlugConverter($this->getProcessor());
@@ -5382,7 +5392,8 @@ class UrlAliasHandlerTest extends TestCase
             $languageHandler,
             $slugConverter,
             $contentGateway,
-            $languageMaskGenerator
+            $languageMaskGenerator,
+            $this->createMock(TransactionHandler::class)
         );
     }
 

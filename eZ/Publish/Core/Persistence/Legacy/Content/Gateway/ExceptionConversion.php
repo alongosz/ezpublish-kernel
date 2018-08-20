@@ -277,17 +277,12 @@ class ExceptionConversion extends Gateway
     }
 
     /**
-     * Bulk-Loads data for the published Versions of multiple Content items specified by their IDs.
-     *
-     * @param int[] $contentIds
-     * @param string[] $translations
-     *
-     * @return array
+     * {@inheritdoc}
      */
-    public function loadContentList(array $contentIds, array $translations = null)
+    public function loadPublishedContentList(array $contentIds, array $translations = null)
     {
         try {
-            return $this->innerGateway->loadContentList($contentIds);
+            return $this->innerGateway->loadPublishedContentList($contentIds, $translations);
         } catch (DBALException $e) {
             throw new RuntimeException('Database error', 0, $e);
         } catch (PDOException $e) {

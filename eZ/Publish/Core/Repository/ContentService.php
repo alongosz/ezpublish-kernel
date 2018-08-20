@@ -1921,36 +1921,44 @@ class ContentService implements ContentServiceInterface
     }
 
     /**
-     * Bulk-load published Content items by the list of Content IDs.
+     * Bulk-load Content items by the list of ContentInfo Value Objects.
      *
      * Note: it does not throw exceptions on load, just ignores erroneous Content item.
      *
-     * @param int[] $contentIds
-     * @param array $languages A language priority, filters returned fields and is used as prioritized language code on
-     *                         returned value object. If not given all languages are returned.
+     * @param \eZ\Publish\API\Repository\Values\Content\ContentInfo[] $contentInfoList
+     * @param string[] $languages A language priority, filters returned fields and is used as prioritized language code on
+     *                            returned value object. If not given all languages are returned.
      * @param bool $useAlwaysAvailable Add Main language to \$languages if true (default) and if alwaysAvailable is true
      *
      * @return \eZ\Publish\API\Repository\Values\Content\Content[] list of Content items with Content Ids as keys
      */
-    public function loadContentList(array $contentIds, array $languages = null, $useAlwaysAvailable = true)
-    {
-        $contentIds = array_unique($contentIds);
-
-        // @todo $useAlwaysAvailable
-        $spiContentList = $this->persistenceHandler->contentHandler()->loadContentList(
-            $contentIds,
-            $languages
+    public function loadPublishedContentListByContentInfo(
+        array $contentInfoList,
+        array $languages = [],
+        $useAlwaysAvailable = true
+    ) {
+        $contentIds = array_unique(
+            array_map(
+                function (ContentInfo $contentInfo) {
+                    return $contentInfo->id;
+                },
+                $contentInfoList
+            )
         );
 
-        $contentItems = [];
-        foreach ($spiContentList as $spiContent) {
-            $contentId = $spiContent->versionInfo->contentInfo->id;
-            $contentItems[$contentId] = $this->domainMapper->buildContentDomainObject(
-                $spiContent
+        $spiContentList = $this->persistenceHandler->contentHandler()->loadPublishedContentList($contentIds);
+        $contentList = [];
+        foreach ($spiContentList as $contentId => $spiContent) {
+            $contentInfo = $spiContent->versionInfo->contentInfo;
+            $contentList[$contentId] = $this->domainMapper->buildContentDomainObject(
+                $spiContent,
+                null,
+                $languages,
+                $useAlwaysAvailable && $contentInfo->alwaysAvailable ? $contentInfo->mainLanguageCode : null
             );
         }
 
-        return $contentItems;
+        return $contentList;
     }
 
     /**

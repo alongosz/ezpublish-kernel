@@ -748,16 +748,16 @@ class ContentService implements APIContentService, Sessionable
     }
 
     /**
-     * Bulk-load published Content items by the list of Content IDs.
+     * Bulk-load Content items by the list of ContentInfo Value Objects.
      *
-     * @param int[] $contentIds
-     * @param array $languages A language priority, filters returned fields and is used as prioritized language code on
-     *                         returned value object. If not given all languages are returned.
+     * @param \eZ\Publish\API\Repository\Values\Content\ContentInfo[] $contentInfoList
+     * @param string[] $languages A language priority, filters returned fields and is used as prioritized language code on
+     *                            returned value object. If not given all languages are returned.
      * @param bool $useAlwaysAvailable Add Main language to \$languages if true (default) and if alwaysAvailable is true
      *
      * @throws \Exception Not implemented
      */
-    public function loadContentList(array $contentIds, array $languages = null, $useAlwaysAvailable = true)
+    public function loadPublishedContentListByContentInfo(array $contentInfoList, array $languages = [], $useAlwaysAvailable = true)
     {
         throw new \Exception('@todo: Implement.');
     }

@@ -279,5 +279,5 @@ interface Handler
      *
      * @return \eZ\Publish\SPI\Persistence\Content[] SPI Content value object
      */
-    public function loadContentList(array $contentIds, array $translations = null);
+    public function loadPublishedContentList(array $contentIds, array $translations = []);
 }

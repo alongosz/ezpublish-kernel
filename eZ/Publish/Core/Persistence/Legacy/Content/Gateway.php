@@ -157,9 +157,9 @@ abstract class Gateway
      * @param int[] $contentIds
      * @param string[] $translations
      *
-     * @return array
+     * @return array[]
      */
-    abstract public function loadContentList(array $contentIds, array $translations = null);
+    abstract public function loadPublishedContentList(array $contentIds, array $translations = null);
 
     /**
      * Loads info for a content object identified by its remote ID.

@@ -339,6 +339,85 @@ class Handler implements BaseContentHandler
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function loadPublishedContentList(array $contentIds, array $translations = [])
+    {
+        $rawList = $this->contentGateway->loadPublishedContentList($contentIds, $translations);
+        if (empty($rawList)) {
+            return [];
+        }
+
+        $idVersionPairs = [];
+        foreach ($rawList as $row) {
+            $idVersionPairs[] = [
+                'id' => $row['ezcontentobject_id'],
+                'version' => $row['ezcontentobject_version_version'],
+            ];
+        }
+        // remove duplicate entries to optimize query constraints length
+        $idVersionPairs = array_map(
+            'unserialize',
+            array_unique(array_map('serialize', $idVersionPairs))
+        );
+
+        // group name data per Content Id
+        $contentItemNameData = [];
+        foreach ($this->contentGateway->loadVersionedNameData($idVersionPairs) as $nameData) {
+            $contentId = $nameData['ezcontentobject_name_contentobject_id'];
+            $contentItemNameData[$contentId][] = $nameData;
+        }
+
+        // group rows per Content Id be able to ignore Content items with erroneous data
+        $contentItemsRows = [];
+        foreach ($rawList as $row) {
+            $contentId = $row['ezcontentobject_id'];
+            $contentItemsRows[$contentId][] = $row;
+        }
+        unset($rawList, $idVersionPairs);
+
+        // try to extract Content from each Content data
+        $contentItems = [];
+        foreach ($contentItemsRows as $contentId => $contentItemsRow) {
+            try {
+                $contentList = $this->mapper->extractContentFromRows(
+                    $contentItemsRow,
+                    $contentItemNameData[$contentId]
+                );
+                $contentItems[$contentId] = $contentList[0];
+            } catch (Exception $e) {
+                $this->logger->debug(
+                    sprintf(
+                        '%s: Content %d not loaded: %s',
+                        __METHOD__,
+                        $contentId,
+                        $e->getMessage()
+                    )
+                );
+            }
+        }
+
+        // try to load External Storage data for each Content, ignore Content items for which it failed
+        foreach ($contentItems as $contentId => $content) {
+            try {
+                $this->fieldHandler->loadExternalFieldData($content);
+            } catch (Exception $e) {
+                unset($contentItems[$contentId]);
+                $this->logger->debug(
+                    sprintf(
+                        '%s: Content %d not loaded: %s',
+                        __METHOD__,
+                        $contentId,
+                        $e->getMessage()
+                    )
+                );
+            }
+        }
+
+        return $contentItems;
+    }
+
+    /**
      * Returns the metadata object for a content identified by $contentId.
      *
      * @param int|string $contentId
@@ -746,7 +825,7 @@ class Handler implements BaseContentHandler
      *
      * @return \eZ\Publish\SPI\Persistence\Content[] SPI Content value object
      */
-    public function loadContentList(array $contentIds, array $translations = null)
+    public function loadContentList2(array $contentIds, array $translations = null)
     {
         $rows = $this->contentGateway->loadContentList($contentIds);
 

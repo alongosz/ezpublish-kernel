@@ -400,4 +400,74 @@ class ExceptionConversion extends Gateway
             throw new \RuntimeException('Database error', 0, $e);
         }
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function bulkRemoveTranslation($languageId, $actions)
+    {
+        try {
+            return $this->innerGateway->bulkRemoveTranslation($languageId, $actions);
+        } catch (DBALException $e) {
+            throw new \RuntimeException('Database error', 0, $e);
+        } catch (PDOException $e) {
+            throw new \RuntimeException('Database error', 0, $e);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function archiveUrlAliasesForDeletedTranslations($locationId, $parentId, array $languageIds)
+    {
+        try {
+            $this->innerGateway->archiveUrlAliasesForDeletedTranslations($locationId, $parentId, $languageIds);
+        } catch (DBALException $e) {
+            throw new \RuntimeException('Database error', 0, $e);
+        } catch (PDOException $e) {
+            throw new \RuntimeException('Database error', 0, $e);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteUrlAliasesWithoutLocation()
+    {
+        try {
+            return $this->innerGateway->deleteUrlAliasesWithoutLocation();
+        } catch (DBALException $e) {
+            throw new \RuntimeException('Database error', 0, $e);
+        } catch (PDOException $e) {
+            throw new \RuntimeException('Database error', 0, $e);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteUrlAliasesWithoutParent()
+    {
+        try {
+            return $this->innerGateway->deleteUrlAliasesWithoutParent();
+        } catch (DBALException $e) {
+            throw new \RuntimeException('Database error', 0, $e);
+        } catch (PDOException $e) {
+            throw new \RuntimeException('Database error', 0, $e);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteUrlAliasesWithBrokenLink()
+    {
+        try {
+            return $this->innerGateway->deleteUrlAliasesWithBrokenLink();
+        } catch (DBALException $e) {
+            throw new \RuntimeException('Database error', 0, $e);
+        } catch (PDOException $e) {
+            throw new \RuntimeException('Database error', 0, $e);
+        }
+    }
 }

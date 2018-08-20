@@ -632,20 +632,27 @@ class ContentService implements ContentServiceInterface
     }
 
     /**
-     * Bulk-load published Content items by the list of Content IDs.
+     * Bulk-load Content items by the list of ContentInfo Value Objects.
      *
      * Note: it does not throw exceptions on load, just ignores erroneous Content item.
      *
-     * @param int[] $contentIds
-     * @param array $languages A language priority, filters returned fields and is used as prioritized language code on
-     *                         returned value object. If not given all languages are returned.
+     * @param \eZ\Publish\API\Repository\Values\Content\ContentInfo[] $contentInfoList
+     * @param string[] $languages A language priority, filters returned fields and is used as prioritized language code on
+     *                            returned value object. If not given all languages are returned.
      * @param bool $useAlwaysAvailable Add Main language to \$languages if true (default) and if alwaysAvailable is true
      *
      * @return \eZ\Publish\API\Repository\Values\Content\Content[] list of Content items with Content Ids as keys
      */
-    public function loadContentList(array $contentIds, array $languages = null, $useAlwaysAvailable = true)
-    {
-        return $this->service->loadContentList($contentIds, $languages, $useAlwaysAvailable);
+    public function loadPublishedContentListByContentInfo(
+        array $contentInfoList,
+        array $languages = [],
+        $useAlwaysAvailable = true
+    ) {
+        return $this->service->loadPublishedContentListByContentInfo(
+            $contentInfoList,
+            $languages,
+            $useAlwaysAvailable
+        );
     }
 
     /**
