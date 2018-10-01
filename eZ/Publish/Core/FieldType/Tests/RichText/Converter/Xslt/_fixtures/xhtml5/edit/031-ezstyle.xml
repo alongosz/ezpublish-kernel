@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section xmlns="http://ez.no/namespaces/ezpublish5/xhtml5/edit">
-    <div data-ezelement="ezstyle" data-ezname="highlighted_block" data-ezalign="left">Highlighted block with "left" align.</div>
-    <div data-ezelement="ezstyle" data-ezname="highlighted_block" data-ezalign="right">Highlighted block with "right" align.</div>
-    <div data-ezelement="ezstyle" data-ezname="highlighted_block" data-ezalign="center">Highlighted block with "center" align.</div>
+    <div data-ezelement="eztemplate" data-ezname="highlighted_block" data-ezalign="left">
+        <div data-ezelement="ezcontent">Highlighted block with "left" align.</div>
+    </div>
+    <div data-ezelement="eztemplate" data-ezname="highlighted_block" data-ezalign="right">
+        <div data-ezelement="ezcontent">Highlighted block with "right" align.</div>
+    </div>
+    <div data-ezelement="eztemplate" data-ezname="highlighted_block" data-ezalign="center">
+        <div data-ezelement="ezcontent">Highlighted block with "center" align.</div>
+    </div>
 </section>

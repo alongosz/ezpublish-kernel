@@ -627,31 +627,6 @@
     </xsl:element>
   </xsl:template>
 
-  <!-- Custom style tag code -->
-  <xsl:template match="docbook:eztemplate[@ezcustom:eztemplatetype='style']">
-    <xsl:element name="div" namespace="{$outputNamespace}">
-      <xsl:attribute name="data-ezelement">ezstyle</xsl:attribute>
-      <xsl:call-template name="addCommonTemplateAttributes"/>
-      <xsl:apply-templates/>
-    </xsl:element>
-  </xsl:template>
-
-  <xsl:template match="docbook:eztemplateinline[@ezcustom:eztemplatetype='style']">
-    <xsl:element name="span" namespace="{$outputNamespace}">
-      <xsl:attribute name="data-ezelement">ezstyleinline</xsl:attribute>
-      <xsl:call-template name="addCommonTemplateAttributes"/>
-      <xsl:apply-templates/>
-    </xsl:element>
-  </xsl:template>
-
-  <xsl:template match="docbook:eztemplate[@ezcustom:eztemplatetype='style']/docbook:ezcontent">
-    <xsl:apply-templates select="node()|@*"/>
-  </xsl:template>
-
-  <xsl:template match="docbook:eztemplateinline[@ezcustom:eztemplatetype='style']/docbook:ezcontent">
-    <xsl:apply-templates select="node()|@*"/>
-  </xsl:template>
-
   <xsl:template name="extractStyleValue">
     <xsl:param name="style"/>
     <xsl:param name="property"/>

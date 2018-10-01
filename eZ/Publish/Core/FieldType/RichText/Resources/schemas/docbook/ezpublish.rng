@@ -597,9 +597,6 @@
         </data>
       </attribute>
       <optional>
-        <ref name="ez.custom.eztemplatetype"/>
-      </optional>
-      <optional>
         <ref name="ez.xhtml.class.attribute"/>
       </optional>
     </define>
@@ -753,18 +750,6 @@
         <value>left</value>
         <value>center</value>
         <value>right</value>
-      </choice>
-    </attribute>
-  </define>
-
-  <define name="ez.custom.eztemplatetype">
-    <a:documentation>
-        ezcustom:eztemplatetype attribute.
-    </a:documentation>
-    <attribute name="ezcustom:eztemplatetype">
-      <choice>
-        <value>tag</value>
-        <value>style</value>
       </choice>
     </attribute>
   </define>
