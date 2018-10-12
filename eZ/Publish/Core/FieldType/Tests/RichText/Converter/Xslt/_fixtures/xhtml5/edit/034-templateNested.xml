@@ -1,0 +1,35 @@
+<section xmlns="http://ez.no/namespaces/ezpublish5/xhtml5/edit">
+  <p>Test</p>
+  <div data-ezelement="eztemplate" data-ezname="ezyoutube">
+    <div data-ezelement="ezcontent">
+      <p>Video url: ez.no</p>
+      <p>Width: 640</p>
+      <div data-ezelement="eztemplate" data-ezname="eztwitter">
+        <div data-ezelement="ezcontent">
+          <p>Tweet url: twitter.com</p>
+          <p>Cards:</p>
+          <p>Conversation:</p>
+          <p>Theme: light</p>
+          <p>Link color:</p>
+          <p>Width: 500</p>
+          <p>Lang: en</p>
+          <p>DNT: true</p>
+        </div>
+        <span data-ezelement="ezconfig">
+          <span data-ezelement="ezvalue" data-ezvalue-key="tweet_url">twitter.com</span>
+          <span data-ezelement="ezvalue" data-ezvalue-key="theme">light</span>
+          <span data-ezelement="ezvalue" data-ezvalue-key="width">500</span>
+          <span data-ezelement="ezvalue" data-ezvalue-key="lang">en</span>
+          <span data-ezelement="ezvalue" data-ezvalue-key="dnt">true</span>
+        </span>
+      </div>
+      <p>Autoplay: false</p>
+    </div>
+    <span data-ezelement="ezconfig">
+      <span data-ezelement="ezvalue" data-ezvalue-key="video_url">ez.no</span>
+      <span data-ezelement="ezvalue" data-ezvalue-key="width">640</span>
+      <span data-ezelement="ezvalue" data-ezvalue-key="height">360</span>
+      <span data-ezelement="ezvalue" data-ezvalue-key="autoplay">false</span>
+    </span>
+  </div>
+</section>
