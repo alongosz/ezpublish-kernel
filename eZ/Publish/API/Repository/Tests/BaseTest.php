@@ -12,6 +12,7 @@ use Doctrine\DBAL\Connection;
 use eZ\Publish\API\Repository\Exceptions\ContentFieldValidationException;
 use eZ\Publish\API\Repository\Tests\PHPUnitConstraint\ValidationErrorOccurs as PHPUnitConstraintValidationErrorOccurs;
 use eZ\Publish\API\Repository\Values\Content\Location;
+use eZ\Publish\SPI\FieldType\ValidationError;
 use EzSystems\EzPlatformSolrSearchEngine\Tests\SetupFactory\LegacySetupFactory as LegacySolrSetupFactory;
 use PHPUnit\Framework\TestCase;
 use eZ\Publish\API\Repository\Repository;
@@ -24,6 +25,7 @@ use DateTime;
 use ArrayObject;
 use Exception;
 use PDOException;
+use Throwable;
 
 /**
  * Base class for api specific tests.
@@ -716,5 +718,41 @@ abstract class BaseTest extends TestCase
         );
 
         return $contentService->publishVersion($contentDraft->versionInfo);
+    }
+
+    /**
+     * Handle unexpected API Exceptions for better debugging.
+     *
+     * @param \Throwable $t
+     *
+     * @throws \Throwable
+     */
+    protected function onNotSuccessfulTest(Throwable $t)
+    {
+        if ($t instanceof ContentFieldValidationException) {
+            $messages = ['ContentFieldValidationException:'];
+            foreach ($t->getFieldErrors() as $fieldId => $multilingualErrors) {
+                foreach ($multilingualErrors as $languageCode => $validationErrors) {
+                    $messages = array_merge(
+                        $messages,
+                        array_map(
+                            function (ValidationError $validationError) use (
+                                $fieldId,
+                                $languageCode
+                            ) {
+                                $message = $validationError->getTranslatableMessage();
+
+                                return "\t[{$fieldId}][$languageCode] {$message->message}";
+                            },
+                            $validationErrors
+                        )
+                    );
+                }
+            }
+
+            self::fail(implode(PHP_EOL, $messages) . PHP_EOL . $t->getTraceAsString());
+        }
+
+        parent::onNotSuccessfulTest($t);
     }
 }
