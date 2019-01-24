@@ -1449,21 +1449,25 @@ class LocationServiceTest extends BaseTest
         $targetLocation = $locationService->loadLocation($folder3->contentInfo->mainLocationId);
 
         // perform sanity checks
-        $folder1Locations = $locationService->loadLocations($folder1->contentInfo);
-        self::assertCount(2, $folder1Locations);
-        self::assertContains(
-            $primaryLocation,
-            $folder1Locations,
-            "Location {$primaryLocation->id} not found in Folder1 Locations",
-            false,
-            false
+        $folder1LocationIds = array_map(
+            function (Location $location) {
+                return $location->id;
+            },
+            $locationService->loadLocations($folder1->contentInfo)
         );
-        self::assertContains(
-            $secondaryLocation,
-            $folder1Locations,
-            "Location {$secondaryLocation->id} not found in Folder1 Locations",
-            false,
-            false
+        self::assertCount(2, $folder1LocationIds);
+        $expectedLocationIds = [(int)$primaryLocation->id, (int)$secondaryLocation->id];
+        self::assertEquals(
+            $expectedLocationIds,
+            $folder1LocationIds,
+            sprintf(
+                'Folder1 contains Locations %s, but expected: %s',
+                implode(', ', $folder1LocationIds),
+                implode(', ', $expectedLocationIds)
+            ),
+            0.0,
+            10,
+            true
         );
 
         // begin use case
@@ -1478,21 +1482,25 @@ class LocationServiceTest extends BaseTest
         self::assertEquals($folder1->id, $targetLocation->contentInfo->id);
         self::assertEquals($folder3->id, $secondaryLocation->contentInfo->id);
 
-        $folder1Locations = $locationService->loadLocations($folder1->contentInfo);
-        self::assertCount(2, $folder1Locations);
-        self::assertContains(
-            $primaryLocation,
-            $folder1Locations,
-            "Location {$primaryLocation->id} not found in Folder1 Locations",
-            false,
-            false
+        $folder1LocationIds = array_map(
+            function (Location $location) {
+                return $location->id;
+            },
+            $locationService->loadLocations($folder1->contentInfo)
         );
-        self::assertContains(
-            $targetLocation,
-            $folder1Locations,
-            "Location {$targetLocation->id} not found in Folder1 Locations",
-            false,
-            false
+        self::assertCount(2, $folder1LocationIds);
+        $expectedLocationIds = [(int)$primaryLocation->id, (int)$targetLocation->id];
+        self::assertEquals(
+            $expectedLocationIds,
+            $folder1LocationIds,
+            sprintf(
+                'Folder1 contains Locations %s, but expected: %s',
+                implode(', ', $folder1LocationIds),
+                implode(', ', $expectedLocationIds)
+            ),
+            0.0,
+            10,
+            true
         );
 
         self::assertEquals(
