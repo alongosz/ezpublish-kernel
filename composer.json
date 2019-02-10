@@ -32,7 +32,7 @@
         "sensio/framework-extra-bundle": "^5.2",
         "jms/translation-bundle": "^1.4",
         "twig/twig": "^2.5",
-        "ezsystems/doctrine-dbal-schema": "^0.1@dev"
+        "ezsystems/doctrine-dbal-schema": "dev-ezp-30057-schema-export-import as 0.1.x-dev"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "~2.7.5",
@@ -81,5 +81,11 @@
             "name": "ezsystems/ezplatform",
             "url": "https://github.com/ezsystems/ezplatform"
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/alongosz/doctrine-dbal-schema.git"
+        }
+    ]
 }
