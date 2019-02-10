@@ -13,6 +13,7 @@ use eZ\Publish\Core\Persistence\Database\QueryException;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\DBALException;
+use EzSystems\DoctrineSchema\API\DbPlatformFactory;
 
 /**
  * Class ConnectionHandler.
@@ -30,14 +31,24 @@ class ConnectionHandler implements DatabaseHandler
     /**
      * @param string|array $dsn
      *
+     * @param \EzSystems\DoctrineSchema\API\DbPlatformFactory|null $dbPlatformFactory
+     *
      * @return \Doctrine\DBAL\Connection
+     *
+     * @throws \Doctrine\DBAL\DBALException
      */
-    public static function createConnectionFromDSN($dsn)
+    public static function createConnectionFromDSN($dsn, DbPlatformFactory $dbPlatformFactory = null)
     {
         if (is_string($dsn)) {
             $parsed = self::parseDSN($dsn);
         } else {
             $parsed = $dsn;
+        }
+
+        if (null !== $dbPlatformFactory && !empty($parsed['driver'])) {
+            $parsed['platform'] = $dbPlatformFactory->createDatabasePlatformFromDriverAlias(
+                $parsed['driver']
+            );
         }
 
         /**

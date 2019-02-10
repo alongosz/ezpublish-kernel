@@ -56,10 +56,11 @@ services:
         lazy: true
 
     ezpublish.api.storage_engine.legacy.connection:
-        class: "%ezpublish.persistence.connection.class%"
-        factory: "%ezpublish.api.storage_engine.legacy.dbhandler.class%::createConnectionFromDSN"
+        class: '%ezpublish.persistence.connection.class%'
+        factory: '%ezpublish.api.storage_engine.legacy.dbhandler.class%::createConnectionFromDSN'
         arguments:
-            - "%legacy_dsn%"
+            - '%legacy_dsn%'
+            - '@EzSystems\DoctrineSchema\API\DbPlatformFactory'
 
     ezpublish.spi.persistence.legacy.transactionhandler:
         class: "%ezpublish.spi.persistence.legacy.transactionhandler.class%"

@@ -8,9 +8,13 @@
  */
 namespace eZ\Publish\API\Repository\Tests\SetupFactory;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\PDOException;
 use eZ\Publish\Core\Base\ServiceContainer;
+use EzSystems\DoctrineSchema\API\Exception\InvalidConfigurationException;
+use EzSystems\DoctrineSchema\Importer\SchemaImporter;
+use EzSystems\DoctrineSchemaBundle\DependencyInjection\DoctrineSchemaExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use eZ\Publish\API\Repository\Tests\SetupFactory;
 use eZ\Publish\API\Repository\Tests\IdManager;
@@ -314,11 +318,35 @@ class Legacy extends SetupFactory
     protected function initializeSchema()
     {
         if (!self::$schemaInitialized) {
-            $statements = $this->getSchemaStatements();
-
-            $this->applyStatements($statements);
+            $this->createSchema(
+                dirname(__DIR__, 5) .
+                '/Bundle/EzPublishCoreBundle/Resources/config/storage/legacy/schema.yaml'
+            );
 
             self::$schemaInitialized = true;
+        }
+    }
+
+    /**
+     * Import database schema from Doctrine Schema Yaml configuration file.
+     *
+     * @param string $schemaFilePath Yaml schema configuration file path
+     */
+    private function createSchema(string $schemaFilePath)
+    {
+        if (!file_exists($schemaFilePath)) {
+            throw new \RuntimeException("The schema file path {$schemaFilePath} does not exist");
+        }
+
+        $connection = $this->getDatabaseConnection();
+        $importer = new SchemaImporter();
+        try {
+            $schema = $importer->importFromFile($schemaFilePath);
+            $this->applyStatements(
+                $schema->toSql($connection->getDatabasePlatform())
+            );
+        } catch (InvalidConfigurationException | DBALException $e) {
+            throw new \RuntimeException($e->getMessage(), 1, $e);
         }
     }
 
@@ -359,6 +387,16 @@ class Legacy extends SetupFactory
     }
 
     /**
+     * Returns the raw database connection from the service container.
+     *
+     * @return \Doctrine\DBAL\Connection
+     */
+    private function getDatabaseConnection(): Connection
+    {
+        return $this->getServiceContainer()->get('ezpublish.persistence.connection');
+    }
+
+    /**
      * Returns the service container used for initialization of the repository.
      *
      * @return \eZ\Publish\Core\Base\ServiceContainer
@@ -390,6 +428,9 @@ class Legacy extends SetupFactory
 
             $containerBuilder->addCompilerPass(new Compiler\Search\SearchEngineSignalSlotPass('legacy'));
             $containerBuilder->addCompilerPass(new Compiler\Search\FieldRegistryPass());
+
+            // load schema-building services from DoctrineSchemaBundle
+            (new DoctrineSchemaExtension())->load([], $containerBuilder);
 
             // load overrides just before creating test Container
             $loader->load('tests/override.yml');
