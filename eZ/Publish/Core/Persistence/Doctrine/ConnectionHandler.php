@@ -8,12 +8,15 @@
  */
 namespace eZ\Publish\Core\Persistence\Doctrine;
 
+use Doctrine\Common\EventManager;
 use eZ\Publish\Core\Persistence\Database\DatabaseHandler;
 use eZ\Publish\Core\Persistence\Database\QueryException;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\DBALException;
+use eZ\Publish\Core\Persistence\Event\Subscriber\SqliteSessionInit;
 use EzSystems\DoctrineSchema\API\DbPlatformFactory;
+use EzSystems\DoctrineSchema\Database\DbPlatform\SqliteDbPlatform;
 
 /**
  * Class ConnectionHandler.
@@ -46,15 +49,17 @@ class ConnectionHandler implements DatabaseHandler
         }
 
         if (null !== $dbPlatformFactory && !empty($parsed['driver'])) {
-            $parsed['platform'] = $dbPlatformFactory->createDatabasePlatformFromDriverAlias(
+            $parsed['platform'] = $dbPlatformFactory->createDatabasePlatformFromDriverName(
                 $parsed['driver']
             );
         }
 
-        /**
-         * @todo retry connection here.
-         */
-        return DriverManager::getConnection($parsed);
+        $eventManager = new EventManager();
+        if (!empty($parsed['platform']) && $parsed['platform'] instanceof SqliteDbPlatform) {
+            $eventManager->addEventSubscriber(new SqliteSessionInit());
+        }
+
+        return DriverManager::getConnection($parsed, null, $eventManager);
     }
 
     /**

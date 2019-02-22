@@ -44,10 +44,10 @@ tables:
             language_mask: { type: bigint, nullable: false, options: { default: '0' } }
             priority: { type: integer, nullable: false, options: { default: '0' } }
     ezcobj_state_group:
-        uniqueConstraints:
-            ezcobj_state_group_identifier: { columns: [identifier] }
         indexes:
             ezcobj_state_group_lmask: { columns: [language_mask] }
+        uniqueConstraints:
+            ezcobj_state_group_identifier: { columns: [identifier] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -75,8 +75,8 @@ tables:
             contentobject_state_id: { type: integer, nullable: false, options: { default: '0' } }
     ezcollab_group:
         indexes:
-            ezcollab_group_depth: { columns: [depth] }
             ezcollab_group_path: { columns: [path_string], options: { lengths: ['191'] } }
+            ezcollab_group_depth: { columns: [depth] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -182,8 +182,8 @@ tables:
             modified: { type: integer, nullable: false, options: { default: '0' } }
     ezcomment:
         indexes:
-            user_id_session_key_ip: { columns: [user_id, session_key, ip] }
             content_parentcomment: { columns: [contentobject_id, language_id, parent_comment_id] }
+            user_id_session_key_ip: { columns: [user_id, session_key, ip] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -241,9 +241,9 @@ tables:
             name: { type: string, nullable: false, length: 255, options: { default: '' } }
     ezcontentbrowsebookmark:
         indexes:
-            ezcontentbrowsebookmark_user_location: { columns: [user_id, node_id] }
-            ezcontentbrowsebookmark_user: { columns: [user_id] }
             ezcontentbrowsebookmark_location: { columns: [node_id] }
+            ezcontentbrowsebookmark_user: { columns: [user_id] }
+            ezcontentbrowsebookmark_user_location: { columns: [user_id, node_id] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -251,8 +251,8 @@ tables:
             user_id: { type: integer, nullable: false, options: { default: '0' } }
             name: { type: string, nullable: false, length: 255, options: { default: '' } }
         foreignKeys:
-            ezcontentbrowsebookmark_location_fk: { fields: [node_id], foreignTable: ezcontentobject_tree, foreignField: [node_id], options: { onDelete: CASCADE, onUpdate: 'NO ACTION' } }
-            ezcontentbrowsebookmark_user_fk: { fields: [user_id], foreignTable: ezuser, foreignField: [contentobject_id], options: { onDelete: CASCADE, onUpdate: 'NO ACTION' } }
+            ezcontentbrowsebookmark_location_fk: { fields: [node_id], foreignTable: ezcontentobject_tree, foreignFields: [node_id], options: { onDelete: CASCADE, onUpdate: 'NO ACTION' } }
+            ezcontentbrowsebookmark_user_fk: { fields: [user_id], foreignTable: ezuser, foreignFields: [contentobject_id], options: { onDelete: CASCADE, onUpdate: 'NO ACTION' } }
     ezcontentbrowserecent:
         indexes:
             ezcontentbrowserecent_user: { columns: [user_id] }
@@ -265,8 +265,8 @@ tables:
             user_id: { type: integer, nullable: false, options: { default: '0' } }
     ezcontentclass:
         indexes:
-            ezcontentclass_identifier: { columns: [identifier, version] }
             ezcontentclass_version: { columns: [version] }
+            ezcontentclass_identifier: { columns: [identifier, version] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
             version: { type: integer, nullable: false, options: { default: '0' } }
@@ -345,13 +345,13 @@ tables:
             name: { type: string, nullable: true, length: 255 }
     ezcontentobject:
         indexes:
-            ezcontentobject_currentversion: { columns: [current_version] }
-            ezcontentobject_owner: { columns: [owner_id] }
-            ezcontentobject_status: { columns: [status] }
+            ezcontentobject_classid: { columns: [contentclass_id] }
             ezcontentobject_lmask: { columns: [language_mask] }
             ezcontentobject_pub: { columns: [published] }
             ezcontentobject_section: { columns: [section_id] }
-            ezcontentobject_classid: { columns: [contentclass_id] }
+            ezcontentobject_currentversion: { columns: [current_version] }
+            ezcontentobject_owner: { columns: [owner_id] }
+            ezcontentobject_status: { columns: [status] }
         uniqueConstraints:
             ezcontentobject_remote_id: { columns: [remote_id] }
         id:
@@ -370,11 +370,11 @@ tables:
             status: { type: integer, nullable: true, options: { default: '0' } }
     ezcontentobject_attribute:
         indexes:
-            ezcontentobject_attribute_language_code: { columns: [language_code] }
-            sort_key_int: { columns: [sort_key_int] }
+            ezcontentobject_attribute_co_id_ver_lang_code: { columns: [contentobject_id, version, language_code] }
             ezcontentobject_classattr_id: { columns: [contentclassattribute_id] }
             sort_key_string: { columns: [sort_key_string], options: { lengths: ['191'] } }
-            ezcontentobject_attribute_co_id_ver_lang_code: { columns: [contentobject_id, version, language_code] }
+            ezcontentobject_attribute_language_code: { columns: [language_code] }
+            sort_key_int: { columns: [sort_key_int] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
             version: { type: integer, nullable: false, options: { default: '0' } }
@@ -392,8 +392,8 @@ tables:
             sort_key_string: { type: string, nullable: false, length: 255, options: { default: '' } }
     ezcontentobject_link:
         indexes:
-            ezco_link_from: { columns: [from_contentobject_id, from_contentobject_version, contentclassattribute_id] }
             ezco_link_to_co_id: { columns: [to_contentobject_id] }
+            ezco_link_from: { columns: [from_contentobject_id, from_contentobject_version, contentclassattribute_id] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -404,9 +404,9 @@ tables:
             to_contentobject_id: { type: integer, nullable: false, options: { default: '0' } }
     ezcontentobject_name:
         indexes:
+            ezcontentobject_name_lang_id: { columns: [language_id] }
             ezcontentobject_name_cov_id: { columns: [content_version] }
             ezcontentobject_name_name: { columns: [name], options: { lengths: ['191'] } }
-            ezcontentobject_name_lang_id: { columns: [language_id] }
         id:
             content_translation: { type: string, nullable: false, length: 20, options: { default: '' } }
             content_version: { type: integer, nullable: false, options: { default: '0' } }
@@ -417,12 +417,12 @@ tables:
             real_translation: { type: string, nullable: true, length: 20 }
     ezcontentobject_trash:
         indexes:
-            ezcobj_trash_modified_subnode: { columns: [modified_subnode] }
-            ezcobj_trash_path: { columns: [path_string], options: { lengths: ['191'] } }
-            ezcobj_trash_co_id: { columns: [contentobject_id] }
+            ezcobj_trash_depth: { columns: [depth] }
             ezcobj_trash_p_node_id: { columns: [parent_node_id] }
             ezcobj_trash_path_ident: { columns: [path_identification_string], options: { lengths: ['50'] } }
-            ezcobj_trash_depth: { columns: [depth] }
+            ezcobj_trash_co_id: { columns: [contentobject_id] }
+            ezcobj_trash_modified_subnode: { columns: [modified_subnode] }
+            ezcobj_trash_path: { columns: [path_string], options: { lengths: ['191'] } }
         id:
             node_id: { type: integer, nullable: false, options: { default: '0' } }
         fields:
@@ -443,14 +443,14 @@ tables:
             trashed: { type: integer, nullable: false, options: { default: '0' } }
     ezcontentobject_tree:
         indexes:
+            ezcontentobject_tree_path: { columns: [path_string], options: { lengths: ['191'] } }
             modified_subnode: { columns: [modified_subnode] }
             ezcontentobject_tree_remote_id: { columns: [remote_id] }
             ezcontentobject_tree_depth: { columns: [depth] }
-            ezcontentobject_tree_path: { columns: [path_string], options: { lengths: ['191'] } }
-            ezcontentobject_tree_contentobject_id_path_string: { columns: [path_string, contentobject_id] }
-            ezcontentobject_tree_co_id: { columns: [contentobject_id] }
             ezcontentobject_tree_p_node_id: { columns: [parent_node_id] }
             ezcontentobject_tree_path_ident: { columns: [path_identification_string], options: { lengths: ['50'] } }
+            ezcontentobject_tree_contentobject_id_path_string: { columns: [path_string, contentobject_id] }
+            ezcontentobject_tree_co_id: { columns: [contentobject_id] }
         id:
             node_id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -471,9 +471,9 @@ tables:
             sort_order: { type: integer, nullable: true, options: { default: '1' } }
     ezcontentobject_version:
         indexes:
+            ezcontobj_version_obj_status: { columns: [contentobject_id, status] }
             ezcobj_version_creator_id: { columns: [creator_id] }
             idx_object_version_objver: { columns: [contentobject_id, version] }
-            ezcontobj_version_obj_status: { columns: [contentobject_id, status] }
             ezcobj_version_status: { columns: [status] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
@@ -503,10 +503,10 @@ tables:
             symbol: { type: string, nullable: false, length: 255, options: { default: '' } }
     ezdfsfile:
         indexes:
-            ezdfsfile_mtime: { columns: [mtime] }
-            ezdfsfile_name: { columns: [name], options: { lengths: ['191'] } }
-            ezdfsfile_expired_name: { columns: [expired, name], options: { lengths: [null, '191'] } }
             ezdfsfile_name_trunk: { columns: [name_trunk], options: { lengths: ['191'] } }
+            ezdfsfile_expired_name: { columns: [expired, name], options: { lengths: [null, '191'] } }
+            ezdfsfile_name: { columns: [name], options: { lengths: ['191'] } }
+            ezdfsfile_mtime: { columns: [mtime] }
         id:
             name_hash: { type: string, nullable: false, length: 34, options: { default: '' } }
         fields:
@@ -548,9 +548,9 @@ tables:
         indexes:
             ezenumvalue_co_cl_attr_id_co_class_att_ver: { columns: [contentclass_attribute_id, contentclass_attribute_version] }
         id:
+            id: { type: integer, nullable: false, options: { autoincrement: true } }
             contentclass_attribute_id: { type: integer, nullable: false, options: { default: '0' } }
             contentclass_attribute_version: { type: integer, nullable: false, options: { default: '0' } }
-            id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
             enumelement: { type: string, nullable: false, length: 255, options: { default: '' } }
             enumvalue: { type: string, nullable: false, length: 255, options: { default: '' } }
@@ -609,8 +609,8 @@ tables:
         indexes:
             ezinfocollection_attr_cca_id: { columns: [contentclass_attribute_id] }
             ezinfocollection_attr_coa_id: { columns: [contentobject_attribute_id] }
-            ezinfocollection_attr_co_id: { columns: [contentobject_id] }
             ezinfocollection_attr_ic_id: { columns: [informationcollection_id] }
+            ezinfocollection_attr_co_id: { columns: [contentobject_id] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -682,8 +682,8 @@ tables:
             is_removed: { type: integer, nullable: true, options: { default: '0' } }
     ezm_pool:
         indexes:
-            ezm_pool__block_id__ts_hidden: { columns: [block_id, ts_hidden] }
             ezm_pool__block_id__ts_visible: { columns: [block_id, ts_visible] }
+            ezm_pool__block_id__ts_hidden: { columns: [block_id, ts_hidden] }
             ezm_pool__block_id__ts_publication__priority: { columns: [block_id, ts_publication, priority] }
         id:
             block_id: { type: string, nullable: false, length: 32 }
@@ -748,10 +748,10 @@ tables:
             value: { type: decimal, nullable: false, options: { default: '0.00' } }
     eznode_assignment:
         indexes:
-            eznode_assignment_co_version: { columns: [contentobject_version] }
             eznode_assignment_parent_node: { columns: [parent_node] }
-            eznode_assignment_coid_cov: { columns: [contentobject_id, contentobject_version] }
+            eznode_assignment_co_version: { columns: [contentobject_version] }
             eznode_assignment_is_main: { columns: [is_main] }
+            eznode_assignment_coid_cov: { columns: [contentobject_id, contentobject_version] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -778,7 +778,7 @@ tables:
             is_pending: { type: boolean, nullable: false, options: { default: '1' } }
             type: { type: string, nullable: false, length: 128, options: { default: '' } }
             created: { type: integer, nullable: false, options: { default: '0' } }
-            data: { type: blob, nullable: true, length: 65535 }
+            data: { type: text, nullable: true, length: 65535 }
     eznotificationcollection:
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
@@ -1130,11 +1130,11 @@ tables:
             user_id: { type: integer, nullable: false, options: { default: '0' } }
     ezsearch_object_word_link:
         indexes:
+            ezsearch_object_word_link_identifier: { columns: [identifier], options: { lengths: ['191'] } }
+            ezsearch_object_word_link_object: { columns: [contentobject_id] }
             ezsearch_object_word_link_frequency: { columns: [frequency] }
             ezsearch_object_word_link_integer_value: { columns: [integer_value] }
             ezsearch_object_word_link_word: { columns: [word_id] }
-            ezsearch_object_word_link_identifier: { columns: [identifier], options: { lengths: ['191'] } }
-            ezsearch_object_word_link_object: { columns: [contentobject_id] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -1151,10 +1151,10 @@ tables:
             section_id: { type: integer, nullable: false, options: { default: '0' } }
             word_id: { type: integer, nullable: false, options: { default: '0' } }
     ezsearch_search_phrase:
-        uniqueConstraints:
-            ezsearch_search_phrase_phrase: { columns: [phrase], options: { lengths: ['191'] } }
         indexes:
             ezsearch_search_phrase_count: { columns: [phrase_count] }
+        uniqueConstraints:
+            ezsearch_search_phrase_phrase: { columns: [phrase], options: { lengths: ['191'] } }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -1163,8 +1163,8 @@ tables:
             result_count: { type: integer, nullable: true, options: { default: '0' } }
     ezsearch_word:
         indexes:
-            ezsearch_word_obj_count: { columns: [object_count] }
             ezsearch_word_word_i: { columns: [word] }
+            ezsearch_word_obj_count: { columns: [object_count] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -1180,8 +1180,8 @@ tables:
             navigation_part_identifier: { type: string, nullable: true, length: 100, options: { default: ezcontentnavigationpart } }
     ezsession:
         indexes:
-            expiration_time: { columns: [expiration_time] }
             ezsession_user_id: { columns: [user_id] }
+            expiration_time: { columns: [expiration_time] }
         id:
             session_key: { type: string, nullable: false, length: 32, options: { default: '' } }
         fields:
@@ -1275,9 +1275,9 @@ tables:
             ezurlalias_source_url: { columns: [source_url], options: { lengths: ['191'] } }
             ezurlalias_desturl: { columns: [destination_url], options: { lengths: ['191'] } }
             ezurlalias_imp_wcard_fwd: { columns: [is_imported, is_wildcard, forward_to_id] }
+            ezurlalias_source_md5: { columns: [source_md5] }
             ezurlalias_wcard_fwd: { columns: [is_wildcard, forward_to_id] }
             ezurlalias_forward_to_id: { columns: [forward_to_id] }
-            ezurlalias_source_md5: { columns: [source_md5] }
         id:
             id: { type: integer, nullable: false, options: { autoincrement: true } }
         fields:
@@ -1292,11 +1292,11 @@ tables:
         indexes:
             ezurlalias_ml_id: { columns: [id] }
             ezurlalias_ml_text: { columns: [text, id, link], options: { lengths: ['32', null, null] } }
+            ezurlalias_ml_actt_org_al: { columns: [action_type, is_original, is_alias] }
             ezurlalias_ml_text_lang: { columns: [text, lang_mask, parent], options: { lengths: ['32', null, null] } }
             ezurlalias_ml_par_act_id_lnk: { columns: [action, id, link, parent], options: { lengths: ['32', null, null, null] } }
             ezurlalias_ml_par_lnk_txt: { columns: [parent, text, link], options: { lengths: [null, '32', null] } }
             ezurlalias_ml_act_org: { columns: [action, is_original], options: { lengths: ['32', null] } }
-            ezurlalias_ml_actt_org_al: { columns: [action_type, is_original, is_alias] }
         id:
             parent: { type: integer, nullable: false, options: { default: '0' } }
             text_md5: { type: string, nullable: false, length: 32, options: { default: '' } }

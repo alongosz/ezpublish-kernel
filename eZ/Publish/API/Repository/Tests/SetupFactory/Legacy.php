@@ -339,13 +339,30 @@ class Legacy extends SetupFactory
         }
 
         $connection = $this->getDatabaseConnection();
+        $liveSchema = $connection->getSchemaManager()->createSchema();
+        $connection->beginTransaction();
         $importer = new SchemaImporter();
         try {
+            $databasePlatform = $connection->getDatabasePlatform();
             $schema = $importer->importFromFile($schemaFilePath);
-            $this->applyStatements(
-                $schema->toSql($connection->getDatabasePlatform())
+            $statements = [];
+            // cleanup pre-existing database
+            foreach ($schema->getTables() as $table) {
+                if ($liveSchema->hasTable($table->getName())) {
+                    $statements[] = $databasePlatform->getDropTableSQL($table);
+                }
+            }
+            $statements = array_merge(
+                $statements,
+                // generate schema DDL queries
+                $schema->toSql($databasePlatform)
             );
+            $this->applyStatements(
+                $statements
+            );
+            $connection->commit();
         } catch (InvalidConfigurationException | DBALException $e) {
+            $connection->rollBack();
             throw new \RuntimeException($e->getMessage(), 1, $e);
         }
     }
