@@ -34,7 +34,7 @@ class LogicalOr extends CriterionParser
             throw new Exceptions\Parser('Invalid <OR> format');
         }
 
-        $criteria = array();
+        $criteria = [];
         foreach ($data['OR'] as $criterionName => $criterionData) {
             $criteria[] = $this->dispatchCriterion($criterionName, $criterionData, $parsingDispatcher);
         }

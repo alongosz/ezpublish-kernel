@@ -34,7 +34,7 @@ class LogicalAnd extends CriterionParser
             throw new Exceptions\Parser('Invalid <AND> format');
         }
 
-        $criteria = array();
+        $criteria = [];
         foreach ($data['AND'] as $criterionName => $criterionData) {
             $criteria[] = $this->dispatchCriterion($criterionName, $criterionData, $parsingDispatcher);
         }
