@@ -195,7 +195,7 @@ class RelationProcessorTest extends BaseServiceMockTest
                         )
                     );
 
-                $callCounter += 1;
+                ++$callCounter;
             }
         }
     }

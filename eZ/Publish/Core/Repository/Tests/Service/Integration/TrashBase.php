@@ -89,10 +89,10 @@ abstract class TrashBase extends BaseServiceTest
     {
         $trashItem = new TrashItem();
         $value = isset($trashItem->notDefined);
-        self::assertEquals(false, $value);
+        self::assertFalse($value);
 
         $value = isset($trashItem->id);
-        self::assertEquals(true, $value);
+        self::assertTrue($value);
     }
 
     /**

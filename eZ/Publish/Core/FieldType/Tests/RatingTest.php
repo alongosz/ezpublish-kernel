@@ -334,7 +334,7 @@ class RatingTest extends FieldTypeTest
     public function testBuildFieldValueWithParamFalse()
     {
         $value = new Value(false);
-        self::assertSame(false, $value->isDisabled);
+        self::assertFalse($value->isDisabled);
     }
 
     /**
@@ -343,7 +343,7 @@ class RatingTest extends FieldTypeTest
     public function testBuildFieldValueWithParamTrue()
     {
         $value = new Value(true);
-        self::assertSame(true, $value->isDisabled);
+        self::assertTrue($value->isDisabled);
     }
 
     /**
@@ -352,7 +352,7 @@ class RatingTest extends FieldTypeTest
     public function testBuildFieldValueWithoutParam()
     {
         $value = new Value();
-        self::assertSame(false, $value->isDisabled);
+        self::assertFalse($value->isDisabled);
     }
 
     protected function provideFieldTypeIdentifier()

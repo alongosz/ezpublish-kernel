@@ -110,17 +110,17 @@ abstract class RoleBase extends BaseServiceTest
     {
         $role = new Role();
         $value = isset($role->notDefined);
-        self::assertEquals(false, $value);
+        self::assertFalse($value);
 
         $value = isset($role->id);
-        self::assertEquals(true, $value);
+        self::assertTrue($value);
 
         $policy = new Policy();
         $value = isset($policy->notDefined);
-        self::assertEquals(false, $value);
+        self::assertFalse($value);
 
         $value = isset($policy->id);
-        self::assertEquals(true, $value);
+        self::assertTrue($value);
     }
 
     /**

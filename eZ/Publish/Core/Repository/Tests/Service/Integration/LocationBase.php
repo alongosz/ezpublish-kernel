@@ -88,10 +88,10 @@ abstract class LocationBase extends BaseServiceTest
     {
         $location = new Location();
         $value = isset($location->notDefined);
-        self::assertEquals(false, $value);
+        self::assertFalse($value);
 
         $value = isset($location->id);
-        self::assertEquals(true, $value);
+        self::assertTrue($value);
     }
 
     /**
@@ -613,13 +613,13 @@ abstract class LocationBase extends BaseServiceTest
         $location = $locationService->loadLocation(5);
         $location = $locationService->hideLocation($location);
         self::assertInstanceOf('\\eZ\\Publish\\API\\Repository\\Values\\Content\\Location', $location);
-        self::assertEquals(true, $location->hidden);
-        self::assertEquals(true, $location->invisible);
+        self::assertTrue($location->hidden);
+        self::assertTrue($location->invisible);
 
         $location = $locationService->unhideLocation($location);
         self::assertInstanceOf('\\eZ\\Publish\\API\\Repository\\Values\\Content\\Location', $location);
-        self::assertEquals(false, $location->hidden);
-        self::assertEquals(false, $location->invisible);
+        self::assertFalse($location->hidden);
+        self::assertFalse($location->invisible);
     }
 
     /**

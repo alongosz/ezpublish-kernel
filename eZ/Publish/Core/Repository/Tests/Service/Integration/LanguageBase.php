@@ -79,10 +79,10 @@ abstract class LanguageBase extends BaseServiceTest
     {
         $language = new Language();
         $value = isset($language->notDefined);
-        self::assertEquals(false, $value);
+        self::assertFalse($value);
 
         $value = isset($language->id);
-        self::assertEquals(true, $value);
+        self::assertTrue($value);
     }
 
     /**
@@ -197,7 +197,7 @@ abstract class LanguageBase extends BaseServiceTest
         $languageService = $this->repository->getContentLanguageService();
 
         $language = $languageService->loadLanguage('eng-GB');
-        self::assertEquals(true, $language->enabled);
+        self::assertTrue($language->enabled);
 
         $updatedLanguage = $languageService->disableLanguage($language);
 
@@ -236,7 +236,7 @@ abstract class LanguageBase extends BaseServiceTest
         $languageService = $this->repository->getContentLanguageService();
 
         $language = $languageService->loadLanguage('eng-GB');
-        self::assertEquals(true, $language->enabled);
+        self::assertTrue($language->enabled);
 
         $updatedLanguage = $languageService->disableLanguage($language);
 

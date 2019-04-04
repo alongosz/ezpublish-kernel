@@ -47,8 +47,8 @@ abstract class UserBase extends BaseServiceTest
         );
 
         $group = new UserGroup();
-        self::assertEquals(null, $group->parentId);
-        self::assertEquals(null, $group->subGroupCount);
+        self::assertNull($group->parentId);
+        self::assertNull($group->subGroupCount);
 
         $this->assertPropertiesCorrect(
             array(
@@ -115,17 +115,17 @@ abstract class UserBase extends BaseServiceTest
     {
         $user = new User();
         $value = isset($user->notDefined);
-        self::assertEquals(false, $value);
+        self::assertFalse($value);
 
         $value = isset($user->login);
-        self::assertEquals(true, $value);
+        self::assertTrue($value);
 
         $userGroup = new UserGroup();
         $value = isset($userGroup->notDefined);
-        self::assertEquals(false, $value);
+        self::assertFalse($value);
 
         $value = isset($userGroup->parentId);
-        self::assertEquals(true, $value);
+        self::assertTrue($value);
     }
 
     /**

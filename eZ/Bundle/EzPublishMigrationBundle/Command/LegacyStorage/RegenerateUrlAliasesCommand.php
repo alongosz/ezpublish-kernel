@@ -375,10 +375,10 @@ EOT
                         $row['language_code'],
                         (bool)$row['always_available']
                     );
-                    $createdAliasCount += 1;
+                    ++$createdAliasCount;
                     $this->setDefaultTable();
                 } catch (ForbiddenException $e) {
-                    $conflictCount += 1;
+                    ++$conflictCount;
                 } catch (Exception $e) {
                     $this->setDefaultTable();
                     throw $e;
@@ -822,10 +822,10 @@ EOT
                         $row['language_code'],
                         (bool)$row['always_available']
                     );
-                    $createdAliasCount += 1;
+                    ++$createdAliasCount;
                     $this->setDefaultTable();
                 } catch (ForbiddenException $e) {
-                    $conflictCount += 1;
+                    ++$conflictCount;
                 } catch (Exception $e) {
                     $this->setDefaultTable();
                     throw $e;

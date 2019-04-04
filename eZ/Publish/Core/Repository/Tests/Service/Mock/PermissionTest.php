@@ -124,7 +124,7 @@ class PermissionTest extends BaseServiceMockTest
 
         $result = $mockedService->hasAccess('test-module', 'test-function');
 
-        self::assertEquals(true, $result);
+        self::assertTrue($result);
     }
 
     public function providerForTestHasAccessReturnsFalse()
@@ -201,7 +201,7 @@ class PermissionTest extends BaseServiceMockTest
 
         $result = $service->hasAccess('test-module', 'test-function');
 
-        self::assertEquals(false, $result);
+        self::assertFalse($result);
     }
 
     /**
@@ -229,7 +229,7 @@ class PermissionTest extends BaseServiceMockTest
             $repositoryMock
         );
 
-        self::assertEquals(true, $result);
+        self::assertTrue($result);
     }
 
     /**
