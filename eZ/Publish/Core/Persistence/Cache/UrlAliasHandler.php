@@ -134,10 +134,10 @@ class UrlAliasHandler extends AbstractInMemoryPersistenceHandler implements UrlA
 
         return $this->getListCacheValue(
             'ez-urlAlias-location-list-' . $locationId . ($custom ? '-custom' : ''),
-            static function() use ($locationId, $custom, $persistenceHandler) {
+            static function () use ($locationId, $custom, $persistenceHandler) {
                 return $persistenceHandler->urlAliasHandler()->listURLAliasesForLocation($locationId, $custom);
             },
-            static function(UrlAlias $alias) use ($persistenceHandler) {
+            static function (UrlAlias $alias) use ($persistenceHandler) {
                 $tags = ['urlAlias-' . $alias->id];
 
                 if ($alias->type === UrlAlias::LOCATION) {
@@ -151,8 +151,8 @@ class UrlAliasHandler extends AbstractInMemoryPersistenceHandler implements UrlA
 
                 return $tags;
             },
-            static function() { return []; },
-            static function() use ($locationId) { return ['urlAlias-location-' . $locationId]; },
+            static function () { return []; },
+            static function () use ($locationId) { return ['urlAlias-location-' . $locationId]; },
             ['location' => $locationId, 'custom' => $custom]
         );
     }
