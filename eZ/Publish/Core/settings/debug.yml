@@ -1,0 +1,3 @@
+# debug mode settings (loaded when %kernel.debug% is true)
+parameters:
+    ezpublish.spi.persistence.cache.inmemory.content.ttl: 800

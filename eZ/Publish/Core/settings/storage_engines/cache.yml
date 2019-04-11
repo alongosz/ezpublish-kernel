@@ -67,7 +67,7 @@ services:
         public: false
         class: eZ\Publish\Core\Persistence\Cache\InMemory\InMemoryCache
         arguments:
-            - "@=container.getParameter('kernel.debug') ? parameter('ezpublish.spi.persistence.cache.inmemory.content.ttl')  *2 : parameter('ezpublish.spi.persistence.cache.inmemory.content.ttl')"
+            - "%ezpublish.spi.persistence.cache.inmemory.content.ttl%"
             - "%ezpublish.spi.persistence.cache.inmemory.content.limit%"
             - "%ezpublish.spi.persistence.cache.inmemory.content.enable%"
 

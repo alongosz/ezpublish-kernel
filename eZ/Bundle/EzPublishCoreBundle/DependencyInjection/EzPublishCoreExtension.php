@@ -405,6 +405,11 @@ class EzPublishCoreExtension extends Extension implements PrependExtensionInterf
         if (!$this->isRichTextBundleEnabled($container)) {
             $loader->load('richtext.yml');
         }
+
+        // load settings fine-tuned for env with debugging enabled
+        if ($this->isDebugEnabled($container)) {
+            $coreLoader->load('debug.yml');
+        }
     }
 
     /**
@@ -660,5 +665,19 @@ class EzPublishCoreExtension extends Extension implements PrependExtensionInterf
         if ($fileSystem->exists($translationsPath)) {
             $container->prependExtensionConfig('framework', ['translator' => ['paths' => [$translationsPath]]]);
         }
+    }
+
+    /**
+     * Return true if Symfony debug mode is enabled.
+     *
+     * @param \Symfony\Component\DependencyInjection\ContainerBuilder $container
+     *
+     * @return bool
+     */
+    private function isDebugEnabled(ContainerBuilder $container): bool
+    {
+        return $container->hasParameter('kernel.debug')
+            ? (bool) $container->getParameter('kernel.debug')
+            : false;
     }
 }
