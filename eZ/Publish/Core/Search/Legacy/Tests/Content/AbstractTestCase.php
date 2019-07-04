@@ -44,7 +44,7 @@ class AbstractTestCase extends LanguageAwareTestCase
     {
         if (!self::$setup) {
             parent::setUp();
-            $this->insertDatabaseFixture(__DIR__ . '/../_fixtures/full_dump.php');
+            $this->insertDatabaseFixture(__DIR__ . '/../../../../Repository/Tests/Service/Integration/Legacy/_fixtures/test_data.php');
             self::$setup = $this->handler;
         } else {
             $this->handler = self::$setup;
