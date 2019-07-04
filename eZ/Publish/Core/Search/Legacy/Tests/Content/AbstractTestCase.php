@@ -106,9 +106,11 @@ class AbstractTestCase extends LanguageAwareTestCase
                     'ezboolean' => new Converter\CheckboxConverter(),
                     'ezkeyword' => new Converter\KeywordConverter(),
                     'ezauthor' => new Converter\AuthorConverter(),
+                    'ezgmaplocation' => new Converter\MapLocationConverter(),
                     'ezimage' => new Converter\NullConverter(),
                     'ezsrrating' => new Converter\NullConverter(),
                     'ezmultioption' => new Converter\NullConverter(),
+                    'ezcomcomments' => new Converter\NullConverter(),
                 ]
             );
         }
