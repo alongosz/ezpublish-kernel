@@ -8,8 +8,15 @@ declare(strict_types=1);
 
 namespace eZ\Publish\API\Repository\Tests\Parallel;
 
+use eZ\Publish\API\Repository\Exceptions\BadStateException;
+
 class ContentServiceTest extends BaseParallelTestCase
 {
+    /**
+     * @throws \eZ\Publish\API\Repository\Exceptions\ForbiddenException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     */
     public function testPublishMultipleVersions(): void
     {
         $repository = $this->getRepository();
@@ -31,15 +38,11 @@ class ContentServiceTest extends BaseParallelTestCase
         });
 
         $this->addParallelProcess($processList, function () use ($version2 , $contentService) {
+            $this->expectException(BadStateException::class);
+            $this->expectExceptionMessage('Someone just published another Version of the Content item');
             $contentService->publishVersion($version2->versionInfo);
         });
 
         $this->runParallelProcesses($processList);
-
-        $version1 = $contentService->loadVersionInfo($version1->contentInfo, 2);
-        $version2 = $contentService->loadVersionInfo($version2->contentInfo, 3);
-
-        $this->assertTrue($version1->isArchived(), 'Version 1 should be archived');
-        $this->assertTrue($version2->isPublished(), 'Version 2 should be published');
     }
 }

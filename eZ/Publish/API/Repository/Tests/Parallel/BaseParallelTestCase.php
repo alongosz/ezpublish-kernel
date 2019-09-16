@@ -29,13 +29,13 @@ abstract class BaseParallelTestCase extends BaseTest
     {
         $connection = $this->getRawDatabaseConnection();
 
-        $proccess = new Process(function () use ($callback, $connection) {
+        $process = new Process(function () use ($callback, $connection) {
             $connection->connect();
             $callback();
             $connection->close();
         });
 
-        $list->addProcess($proccess);
+        $list->addProcess($process);
     }
 
     protected function runParallelProcesses(ParallelProcessList $list): void

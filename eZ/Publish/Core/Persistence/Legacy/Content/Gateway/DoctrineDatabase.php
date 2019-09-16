@@ -602,6 +602,45 @@ class DoctrineDatabase extends Gateway
         return (bool)$statement->rowCount();
     }
 
+    public function setPublishedStatus(int $contentId, int $versionNo): void
+    {
+        $query = $this->getSetVersionStatusQuery(
+            $contentId,
+            $versionNo,
+            VersionInfo::STATUS_PUBLISHED
+        );
+        // @todo refactor inner select to use QueryBuilder
+        $query->andWhere(
+            'NOT EXISTS (SELECT 1 FROM ezcontentobject_version WHERE contentobject_id = :contentId AND status = :status)'
+        );
+
+        if (0 === $query->execute()) {
+            throw new BadStateException('$contentId', "Someone just published another Version of the Content item {$contentId}");
+        }
+
+        $this->markContentAsPublished($contentId, $versionNo);
+    }
+
+    private function getSetVersionStatusQuery(
+        int $contentId,
+        int $versionNo,
+        int $versionStatus
+    ): DoctrineQueryBuilder {
+        $query = $this->connection->createQueryBuilder();
+        $query
+            ->update('ezcontentobject_version')
+            ->set('status', ':status')
+            ->set('modified', ':modified')
+            ->where('contentobject_id = :contentId')
+            ->andWhere('version = :versionNo')
+            ->setParameter('status', $versionStatus, ParameterType::INTEGER)
+            ->setParameter('modified', time(), ParameterType::INTEGER)
+            ->setParameter('contentId', $contentId, ParameterType::INTEGER)
+            ->setParameter('versionNo', $versionNo, ParameterType::INTEGER);
+
+        return $query;
+    }
+
     /**
      * Inserts a new field.
      *
@@ -2281,5 +2320,20 @@ class DoctrineDatabase extends Gateway
                 'Specified translation is the only one Content Object Version has'
             );
         }
+    }
+
+    private function markContentAsPublished(int $contentId, int $versionNo): void
+    {
+        $query = $this->connection->createQueryBuilder();
+        $query
+            ->update('ezcontentobject')
+            ->set('status', ':status')
+            ->set('current_version', ':versionNo')
+            ->where('id =:contentId')
+            ->setParameter('status', ContentInfo::STATUS_PUBLISHED, ParameterType::INTEGER)
+            ->setParameter('versionNo', $versionNo, ParameterType::INTEGER)
+            ->setParameter('contentId', $contentId, ParameterType::INTEGER);
+
+        $query->execute();
     }
 }

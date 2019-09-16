@@ -92,6 +92,16 @@ abstract class Gateway
     abstract public function setStatus($contentId, $version, $status);
 
     /**
+     * Dedicated operation which sets Version status as published, similar to setStatus, but checking
+     * state of all versions to avoid race conditions.
+     *
+     * @see setStatus
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\BadStateException if other operation affected publishing process
+     */
+    abstract public function setPublishedStatus(int $contentId, int $status): void;
+
+    /**
      * Inserts a new field.
      *
      * Only used when a new field is created (i.e. a new object or a field in a

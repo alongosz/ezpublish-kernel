@@ -8,6 +8,7 @@
  */
 namespace eZ\Publish\Core\Persistence\Legacy\Content\Gateway;
 
+use eZ\Publish\API\Repository\Exceptions\BadStateException;
 use eZ\Publish\Core\Persistence\Legacy\Content\Gateway;
 use eZ\Publish\Core\Persistence\Legacy\Content\StorageFieldValue;
 use eZ\Publish\SPI\Persistence\Content;
@@ -168,6 +169,17 @@ class ExceptionConversion extends Gateway
         } catch (DBALException $e) {
             throw new RuntimeException('Database error', 0, $e);
         } catch (PDOException $e) {
+            throw new RuntimeException('Database error', 0, $e);
+        }
+    }
+
+    public function setPublishedStatus(int $contentId, int $status): void
+    {
+        try {
+            $this->innerGateway->setPublishedStatus($contentId, $status);
+        } catch (BadStateException $e) {
+            throw $e;
+        } catch (DBALException | PDOException $e) {
             throw new RuntimeException('Database error', 0, $e);
         }
     }
