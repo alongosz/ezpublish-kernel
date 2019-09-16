@@ -8,7 +8,7 @@
  */
 namespace eZ\Publish\API\Repository\Tests\Parallel;
 
-class ContentServiceTest extends BaseParallelTest
+class ContentServiceTest extends BaseParallelTestCase
 {
     public function testPublishMultipleVersions(): void
     {
@@ -25,15 +25,16 @@ class ContentServiceTest extends BaseParallelTest
         $version1 = $contentService->createContentDraft($content->contentInfo, $content->versionInfo);
         $version2 = $contentService->createContentDraft($content->contentInfo, $content->versionInfo);
 
-        $this->addParallelProccess(function () use ($version1 , $contentService) {
+        $proccessList = new ParallelProcessList();
+        $this->addParallelProccess($proccessList, function () use ($version1 , $contentService) {
             $version = $contentService->publishVersion($version1->versionInfo);
         });
 
-        $this->addParallelProccess(function () use ($version2 , $contentService) {
+        $this->addParallelProccess($proccessList, function () use ($version2 , $contentService) {
             $version = $contentService->publishVersion($version2->versionInfo);
         });
 
-        $this->runParalleledProcesses();
+        $this->runParallelProcesses($proccessList);
 
         $version1 = $contentService->loadVersionInfo($version1->contentInfo, 2);
         $version2 = $contentService->loadVersionInfo($version1->contentInfo, 3);
