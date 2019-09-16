@@ -1,11 +1,11 @@
 <?php
 
 /**
- * File containing the BaseParallelTest class.
- *
  * @copyright Copyright (C) eZ Systems AS. All rights reserved.
  * @license For full copyright and license information view LICENSE file distributed with this source code.
  */
+declare(strict_types=1);
+
 namespace eZ\Publish\API\Repository\Tests\Parallel;
 
 use eZ\Publish\API\Repository\Tests\BaseTest;
@@ -25,7 +25,7 @@ abstract class BaseParallelTestCase extends BaseTest
         }
     }
 
-    protected function addParallelProccess(ParallelProcessList $list, callable $callback): void
+    protected function addParallelProcess(ParallelProcessList $list, callable $callback): void
     {
         $connection = $this->getRawDatabaseConnection();
 
@@ -35,7 +35,7 @@ abstract class BaseParallelTestCase extends BaseTest
             $connection->close();
         });
 
-        $list->addProccess($proccess);
+        $list->addProcess($proccess);
     }
 
     protected function runParallelProcesses(ParallelProcessList $list): void

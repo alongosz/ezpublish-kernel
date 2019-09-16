@@ -12,15 +12,15 @@ use Jenner\SimpleFork\Process;
 
 class ParallelProcessList implements \IteratorAggregate
 {
-    /** @var Jenner\SimpleFork\Process[] */
+    /** @var \Jenner\SimpleFork\Process[] */
     private $pool = [];
 
-    public function addProccess(Process $callback): void
+    public function addProcess(Process $callback): void
     {
         $this->pool[] = $callback;
     }
 
-    public function getIterator()
+    public function getIterator(): \Iterator
     {
         return new \ArrayIterator($this->pool);
     }
