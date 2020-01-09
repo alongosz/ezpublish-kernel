@@ -65,6 +65,7 @@ class RepositoryFactory implements ContainerAwareInterface
         PasswordHashServiceInterface $passwordHashService,
         ThumbnailStrategy $thumbnailStrategy,
         ProxyDomainMapperFactoryInterface $proxyDomainMapperFactory,
+        Mapper\ContentDomainMapper $contentDomainMapper,
         Mapper\ContentTypeDomainMapper $contentTypeDomainMapper
     ): Repository {
         return new $this->repositoryClass(
@@ -76,6 +77,7 @@ class RepositoryFactory implements ContainerAwareInterface
             $passwordHashService,
             $thumbnailStrategy,
             $proxyDomainMapperFactory,
+            $contentDomainMapper,
             $contentTypeDomainMapper,
             [
                 'role' => [

@@ -77,6 +77,7 @@ class RepositoryFactory implements ContainerAwareInterface
         PasswordHashServiceInterface $passwordHashService,
         ThumbnailStrategy $thumbnailStrategy,
         ProxyDomainMapperFactoryInterface $proxyDomainMapperFactory,
+        Mapper\ContentDomainMapper $contentDomainMapper,
         Mapper\ContentTypeDomainMapper $contentTypeDomainMapper
     ): Repository {
         $config = $this->container->get('ezpublish.api.repository_configuration_provider')->getRepositoryConfig();
@@ -90,6 +91,7 @@ class RepositoryFactory implements ContainerAwareInterface
             $passwordHashService,
             $thumbnailStrategy,
             $proxyDomainMapperFactory,
+            $contentDomainMapper,
             $contentTypeDomainMapper,
             [
                 'role' => [
