@@ -75,6 +75,7 @@ abstract class Base extends TestCase
                 $this->createMock(PasswordHashServiceInterface::class),
                 $this->getThumbnailStrategy(),
                 $this->createMock(ProxyDomainMapperFactoryInterface::class),
+                $this->getContentTypeDomainMapperMock(),
                 $serviceSettings,
             );
 

@@ -227,6 +227,7 @@ class Repository implements RepositoryInterface
 
     /** @var \eZ\Publish\Core\Repository\ProxyFactory\ProxyDomainMapperInterface|null */
     private $proxyDomainMapper;
+
     public function __construct(
         PersistenceHandler $persistenceHandler,
         SearchHandler $searchHandler,
@@ -236,6 +237,7 @@ class Repository implements RepositoryInterface
         PasswordHashServiceInterface $passwordHashGenerator,
         ThumbnailStrategy $thumbnailStrategy,
         ProxyDomainMapperFactoryInterface $proxyDomainMapperFactory,
+        Mapper\ContentTypeDomainMapper $contentTypeDomainMapper,
         array $serviceSettings = [],
         LoggerInterface $logger = null
     ) {
@@ -247,6 +249,7 @@ class Repository implements RepositoryInterface
         $this->passwordHashService = $passwordHashGenerator;
         $this->thumbnailStrategy = $thumbnailStrategy;
         $this->proxyDomainMapperFactory = $proxyDomainMapperFactory;
+        $this->contentTypeDomainMapper = $contentTypeDomainMapper;
 
         $this->serviceSettings = $serviceSettings + [
                 'content' => [],
@@ -353,7 +356,7 @@ class Repository implements RepositoryInterface
             $this->persistenceHandler->contentTypeHandler(),
             $this->persistenceHandler->userHandler(),
             $this->getContentDomainMapper(),
-            $this->getContentTypeDomainMapper(),
+            $this->contentTypeDomainMapper,
             $this->fieldTypeRegistry,
             $this->getPermissionResolver(),
             $this->serviceSettings['contentType']
@@ -704,7 +707,7 @@ class Repository implements RepositoryInterface
 
         $this->nameSchemaService = new Helper\NameSchemaService(
             $this->persistenceHandler->contentTypeHandler(),
-            $this->getContentTypeDomainMapper(),
+            $this->contentTypeDomainMapper,
             $this->fieldTypeRegistry,
             $this->serviceSettings['nameSchema']
         );
@@ -757,7 +760,7 @@ class Repository implements RepositoryInterface
             $this->persistenceHandler->contentHandler(),
             $this->persistenceHandler->locationHandler(),
             $this->persistenceHandler->contentTypeHandler(),
-            $this->getContentTypeDomainMapper(),
+            $this->contentTypeDomainMapper,
             $this->persistenceHandler->contentLanguageHandler(),
             $this->fieldTypeRegistry,
             $this->thumbnailStrategy,
@@ -776,27 +779,6 @@ class Repository implements RepositoryInterface
         $this->proxyDomainMapper = $this->proxyDomainMapperFactory->create($this);
 
         return $this->proxyDomainMapper;
-    }
-
-    /**
-     * Get ContentType Domain Mapper.
-     *
-     * @todo Move out from this & other repo instances when services becomes proper services in DIC terms using factory.
-     */
-    protected function getContentTypeDomainMapper(): Mapper\ContentTypeDomainMapper
-    {
-        if ($this->contentTypeDomainMapper !== null) {
-            return $this->contentTypeDomainMapper;
-        }
-
-        $this->contentTypeDomainMapper = new Mapper\ContentTypeDomainMapper(
-            $this->persistenceHandler->contentTypeHandler(),
-            $this->persistenceHandler->contentLanguageHandler(),
-            $this->fieldTypeRegistry,
-            $this->getProxyDomainMapper()
-        );
-
-        return $this->contentTypeDomainMapper;
     }
 
     /**

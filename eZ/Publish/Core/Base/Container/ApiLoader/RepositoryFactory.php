@@ -10,6 +10,7 @@ use eZ\Publish\Core\FieldType\FieldTypeRegistry;
 use eZ\Publish\Core\Repository\ProxyFactory\ProxyDomainMapperFactoryInterface;
 use eZ\Publish\Core\Repository\User\PasswordHashServiceInterface;
 use eZ\Publish\Core\Repository\Helper\RelationProcessor;
+use eZ\Publish\Core\Repository\Mapper;
 use eZ\Publish\Core\Search\Common\BackgroundIndexer;
 use eZ\Publish\SPI\Persistence\Handler as PersistenceHandler;
 use eZ\Publish\SPI\Repository\Strategy\ContentThumbnail\ThumbnailStrategy;
@@ -63,7 +64,8 @@ class RepositoryFactory implements ContainerAwareInterface
         FieldTypeRegistry $fieldTypeRegistry,
         PasswordHashServiceInterface $passwordHashService,
         ThumbnailStrategy $thumbnailStrategy,
-        ProxyDomainMapperFactoryInterface $proxyDomainMapperFactory
+        ProxyDomainMapperFactoryInterface $proxyDomainMapperFactory,
+        Mapper\ContentTypeDomainMapper $contentTypeDomainMapper
     ): Repository {
         return new $this->repositoryClass(
             $persistenceHandler,
@@ -74,6 +76,7 @@ class RepositoryFactory implements ContainerAwareInterface
             $passwordHashService,
             $thumbnailStrategy,
             $proxyDomainMapperFactory,
+            $contentTypeDomainMapper,
             [
                 'role' => [
                     'limitationTypes' => $this->roleLimitations,
