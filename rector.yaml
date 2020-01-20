@@ -1,0 +1,12 @@
+parameters:
+    paths:
+        - 'eZ/Publish/Core/Persistence/Legacy/Content/Section/Gateway'
+    auto_import_names: true
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Utils\Rector\:
+        resource: 'utils/Rector/*'

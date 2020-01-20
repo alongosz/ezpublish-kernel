@@ -58,7 +58,8 @@
         "friendsofphp/php-cs-fixer": "2.15.3",
         "phpunit/phpunit": "^8.2",
         "matthiasnoback/symfony-dependency-injection-test": "^4.0",
-        "ezsystems/behatbundle": "^7.0@dev"
+        "ezsystems/behatbundle": "^7.0@dev",
+        "rector/rector": "^0.6.11"
     },
     "conflict": {
         "doctrine/dbal": "2.7.0",
@@ -80,7 +81,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "EzSystems\\PlatformInstallerBundleTests\\": "eZ/Bundle/PlatformInstallerBundle/tests"
+            "EzSystems\\PlatformInstallerBundleTests\\": "eZ/Bundle/PlatformInstallerBundle/tests",
+            "Utils\\": "utils"
         }
     },
     "config": {
