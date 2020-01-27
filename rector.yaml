@@ -10,3 +10,6 @@ services:
 
     Utils\Rector\:
         resource: 'utils/Rector/*'
+
+    Rector\TypeDeclaration\Rector\FunctionLike\ParamTypeDeclarationRector: ~
+    Rector\TypeDeclaration\Rector\FunctionLike\ReturnTypeDeclarationRector: ~
