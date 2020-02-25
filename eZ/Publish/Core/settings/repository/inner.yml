@@ -126,7 +126,7 @@ services:
         calls:
             - ['setLogger', ['@?logger']]
 
-    # Domain mappers and proxies
+    # Proxies for Domain Mappers
     eZ\Publish\Core\Repository\ProxyFactory\ProxyGenerator:
         arguments:
             $proxyCacheDir: '%ezplatform.kernel.proxy_cache_dir%'
@@ -152,13 +152,11 @@ services:
     eZ\Publish\Core\Repository\ProxyFactory\ProxyDomainMapperInterface:
         alias: 'eZ\Publish\Core\Repository\ProxyFactory\ProxyDomainMapper'
 
-    # Mappers
+    # Domain Mappers
     eZ\Publish\Core\Repository\Mapper\ProxyAwareDomainMapper:
         abstract: true
-        calls:
-            -   method: setProxyFactory
-                arguments:
-                    $proxyFactory: '@eZ\Publish\Core\Repository\ProxyFactory\ProxyDomainMapperInterface'
+        arguments:
+            $proxyFactory: '@eZ\Publish\Core\Repository\ProxyFactory\ProxyDomainMapperInterface'
 
     eZ\Publish\Core\Repository\Mapper\ContentTypeDomainMapper:
         parent: eZ\Publish\Core\Repository\Mapper\ProxyAwareDomainMapper
