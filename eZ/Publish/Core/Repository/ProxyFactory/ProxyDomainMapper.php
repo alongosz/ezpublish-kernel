@@ -8,7 +8,12 @@ declare(strict_types=1);
 
 namespace eZ\Publish\Core\Repository\ProxyFactory;
 
-use eZ\Publish\API\Repository\Repository;
+use eZ\Publish\API\Repository\ContentService;
+use eZ\Publish\API\Repository\ContentTypeService;
+use eZ\Publish\API\Repository\LanguageService;
+use eZ\Publish\API\Repository\LocationService;
+use eZ\Publish\API\Repository\SectionService;
+use eZ\Publish\API\Repository\UserService;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\API\Repository\Values\Content\Language;
@@ -24,16 +29,41 @@ use ProxyManager\Proxy\LazyLoadingInterface;
  */
 final class ProxyDomainMapper implements ProxyDomainMapperInterface
 {
-    /** @var \eZ\Publish\API\Repository\Repository */
-    private $repository;
-
     /** @var \ProxyManager\Factory\LazyLoadingValueHolderFactory */
     private $proxyGenerator;
 
-    public function __construct(Repository $repository, ProxyGeneratorInterface $proxyGenerator)
-    {
-        $this->repository = $repository;
+    /** @var \eZ\Publish\API\Repository\ContentService */
+    private $contentService;
+
+    /** @var \eZ\Publish\API\Repository\ContentTypeService */
+    private $contentTypeService;
+
+    /** @var \eZ\Publish\API\Repository\LocationService */
+    private $locationService;
+
+    /** @var \eZ\Publish\API\Repository\SectionService */
+    private $sectionService;
+
+    /** @var \eZ\Publish\API\Repository\UserService */
+    private $userService;
+    private $languageService;
+
+    public function __construct(
+        ProxyGeneratorInterface $proxyGenerator,
+        ContentService $contentService,
+        ContentTypeService $contentTypeService,
+        LanguageService $languageService,
+        LocationService $locationService,
+        SectionService $sectionService,
+        UserService $userService
+    ) {
         $this->proxyGenerator = $proxyGenerator;
+        $this->contentService = $contentService;
+        $this->contentTypeService = $contentTypeService;
+        $this->languageService = $languageService;
+        $this->locationService = $locationService;
+        $this->sectionService = $sectionService;
+        $this->userService = $userService;
     }
 
     public function createContentProxy(
@@ -45,7 +75,7 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
             &$wrappedObject, LazyLoadingInterface $proxy, $method, array $parameters, &$initializer
         ) use ($contentId, $prioritizedLanguages, $useAlwaysAvailable): bool {
             $initializer = null;
-            $wrappedObject = $this->repository->getContentService()->loadContent(
+            $wrappedObject = $this->contentService->loadContent(
                 $contentId,
                 $prioritizedLanguages,
                 null,
@@ -64,7 +94,7 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
             &$wrappedObject, LazyLoadingInterface $proxy, $method, array $parameters, &$initializer
         ) use ($contentId): bool {
             $initializer = null;
-            $wrappedObject = $this->repository->getContentService()->loadContentInfo(
+            $wrappedObject = $this->contentService->loadContentInfo(
                 $contentId
             );
 
@@ -82,7 +112,7 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
             &$wrappedObject, LazyLoadingInterface $proxy, $method, array $parameters, &$initializer
         ) use ($contentTypeId, $prioritizedLanguages): bool {
             $initializer = null;
-            $wrappedObject = $this->repository->getContentTypeService()->loadContentType(
+            $wrappedObject = $this->contentTypeService->loadContentType(
                 $contentTypeId,
                 $prioritizedLanguages
             );
@@ -101,7 +131,7 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
             &$wrappedObject, LazyLoadingInterface $proxy, $method, array $parameters, &$initializer
         ) use ($contentTypeGroupId, $prioritizedLanguages): bool {
             $initializer = null;
-            $wrappedObject = $this->repository->getContentTypeService()->loadContentTypeGroup(
+            $wrappedObject = $this->contentTypeService->loadContentTypeGroup(
                 $contentTypeGroupId,
                 $prioritizedLanguages
             );
@@ -130,7 +160,7 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
             &$wrappedObject, LazyLoadingInterface $proxy, $method, array $parameters, &$initializer
         ) use ($languageCode): bool {
             $initializer = null;
-            $wrappedObject = $this->repository->getContentLanguageService()->loadLanguage($languageCode);
+            $wrappedObject = $this->languageService->loadLanguage($languageCode);
 
             return true;
         };
@@ -156,7 +186,7 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
             &$wrappedObject, LazyLoadingInterface $proxy, $method, array $parameters, &$initializer
         ) use ($locationId, $prioritizedLanguages): bool {
             $initializer = null;
-            $wrappedObject = $this->repository->getLocationService()->loadLocation(
+            $wrappedObject = $this->locationService->loadLocation(
                 $locationId,
                 $prioritizedLanguages
             );
@@ -173,7 +203,7 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
             &$wrappedObject, LazyLoadingInterface $proxy, $method, array $parameters, &$initializer
         ) use ($sectionId): bool {
             $initializer = null;
-            $wrappedObject = $this->repository->getSectionService()->loadSection($sectionId);
+            $wrappedObject = $this->sectionService->loadSection($sectionId);
 
             return true;
         };
@@ -187,7 +217,7 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
             &$wrappedObject, LazyLoadingInterface $proxy, $method, array $parameters, &$initializer
         ) use ($userId, $prioritizedLanguages): bool {
             $initializer = null;
-            $wrappedObject = $this->repository->getUserService()->loadUser($userId, $prioritizedLanguages);
+            $wrappedObject = $this->userService->loadUser($userId, $prioritizedLanguages);
 
             return true;
         };

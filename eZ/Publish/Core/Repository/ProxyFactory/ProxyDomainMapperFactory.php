@@ -25,6 +25,14 @@ final class ProxyDomainMapperFactory implements ProxyDomainMapperFactoryInterfac
 
     public function create(Repository $repository): ProxyDomainMapperInterface
     {
-        return new ProxyDomainMapper($repository, $this->proxyGenerator);
+        return new ProxyDomainMapper(
+            $this->proxyGenerator,
+            $repository->getContentService(),
+            $repository->getContentTypeService(),
+            $repository->getContentLanguageService(),
+            $repository->getLocationService(),
+            $repository->getSectionService(),
+            $repository->getUserService()
+        );
     }
 }

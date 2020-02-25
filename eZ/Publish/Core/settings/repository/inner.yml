@@ -139,9 +139,15 @@ services:
             $proxyGenerator: '@eZ\Publish\Core\Repository\ProxyFactory\ProxyGeneratorInterface'
 
     eZ\Publish\Core\Repository\ProxyFactory\ProxyDomainMapper:
-        factory: ['@eZ\Publish\Core\Repository\ProxyFactory\ProxyDomainMapperFactory', 'create']
         arguments:
-            $repository: '@ezpublish.api.inner_repository'
+            $proxyGenerator: '@eZ\Publish\Core\Repository\ProxyFactory\ProxyGeneratorInterface'
+            # todo SiteAccess-aware services instead?
+            $contentService: '@ezpublish.api.service.inner_content'
+            $contentTypeService: '@ezpublish.api.service.inner_content_type'
+            $languageService: '@ezpublish.api.service.inner_language'
+            $locationService: '@ezpublish.api.service.inner_location'
+            $sectionService: '@ezpublish.api.service.inner_section'
+            $userService: '@ezpublish.api.service.inner_user'
 
     eZ\Publish\Core\Repository\ProxyFactory\ProxyDomainMapperInterface:
         alias: 'eZ\Publish\Core\Repository\ProxyFactory\ProxyDomainMapper'
