@@ -66,6 +66,9 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
         $this->userService = $userService;
     }
 
+    /**
+     * @return \eZ\Publish\API\Repository\Values\Content\Content|\ProxyManager\Proxy\VirtualProxyInterface
+     */
     public function createContentProxy(
         int $contentId,
         array $prioritizedLanguages = Language::ALL,
@@ -88,6 +91,9 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
         return $this->proxyGenerator->createProxy(Content::class, $initializer);
     }
 
+    /**
+     * @return \eZ\Publish\API\Repository\Values\Content\ContentInfo|\ProxyManager\Proxy\VirtualProxyInterface
+     */
     public function createContentInfoProxy(int $contentId): ContentInfo
     {
         $initializer = function (
@@ -104,6 +110,9 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
         return $this->proxyGenerator->createProxy(ContentInfo::class, $initializer);
     }
 
+    /**
+     * @return \eZ\Publish\API\Repository\Values\ContentType\ContentType|\ProxyManager\Proxy\VirtualProxyInterface
+     */
     public function createContentTypeProxy(
         int $contentTypeId,
         array $prioritizedLanguages = Language::ALL
@@ -123,6 +132,9 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
         return $this->proxyGenerator->createProxy(ContentType::class, $initializer);
     }
 
+    /**
+     * @return \eZ\Publish\API\Repository\Values\ContentType\ContentTypeGroup|\ProxyManager\Proxy\VirtualProxyInterface
+     */
     public function createContentTypeGroupProxy(
         int $contentTypeGroupId,
         array $prioritizedLanguages = Language::ALL
@@ -142,6 +154,12 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
         return $this->proxyGenerator->createProxy(ContentTypeGroup::class, $initializer);
     }
 
+    /**
+     * @param int[] $contentTypeGroupIds
+     * @param string[] $prioritizedLanguages
+     *
+     * @return \eZ\Publish\API\Repository\Values\ContentType\ContentTypeGroup[]|\ProxyManager\Proxy\VirtualProxyInterface
+     */
     public function createContentTypeGroupProxyList(
         array $contentTypeGroupIds,
         array $prioritizedLanguages = Language::ALL
@@ -154,6 +172,9 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
         return $groups;
     }
 
+    /**
+     * @return \eZ\Publish\API\Repository\Values\Content\Language|\ProxyManager\Proxy\VirtualProxyInterface
+     */
     public function createLanguageProxy(string $languageCode): Language
     {
         $initializer = function (
@@ -168,6 +189,11 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
         return $this->proxyGenerator->createProxy(Language::class, $initializer);
     }
 
+    /**
+     * @param string[] $languageCodes
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Language[]|\ProxyManager\Proxy\VirtualProxyInterface
+     */
     public function createLanguageProxyList(array $languageCodes): array
     {
         $languages = [];
@@ -178,6 +204,9 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
         return $languages;
     }
 
+    /**
+     * @return \eZ\Publish\API\Repository\Values\Content\Location|\ProxyManager\Proxy\VirtualProxyInterface
+     */
     public function createLocationProxy(
         int $locationId,
         array $prioritizedLanguages = Language::ALL
@@ -197,6 +226,9 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
         return $this->proxyGenerator->createProxy(Location::class, $initializer);
     }
 
+    /**
+     * @return \eZ\Publish\API\Repository\Values\Content\Section|\ProxyManager\Proxy\VirtualProxyInterface
+     */
     public function createSectionProxy(int $sectionId): Section
     {
         $initializer = function (
@@ -211,6 +243,9 @@ final class ProxyDomainMapper implements ProxyDomainMapperInterface
         return $this->proxyGenerator->createProxy(Section::class, $initializer);
     }
 
+    /**
+     * @return \eZ\Publish\API\Repository\Values\User\User|\ProxyManager\Proxy\VirtualProxyInterface
+     */
     public function createUserProxy(int $userId, array $prioritizedLanguages = Language::ALL): User
     {
         $initializer = function (
