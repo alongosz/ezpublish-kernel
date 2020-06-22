@@ -11,6 +11,7 @@ namespace eZ\Publish\Core\Persistence\Tests;
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use RuntimeException;
 
 /**
  * Database connection factory for integration tests.
@@ -55,7 +56,8 @@ class DatabaseConnectionFactory
         $params = ['url' => $databaseURL];
 
         // set DbPlatform based on database url scheme
-        $scheme = parse_url($databaseURL, PHP_URL_SCHEME);
+
+        $scheme = $this->getSchemeFromUrl($databaseURL);
         $driverName = 'pdo_' . $scheme;
         if (isset($this->databasePlatforms[$driverName])) {
             $params['platform'] = $this->databasePlatforms[$driverName];
@@ -64,5 +66,15 @@ class DatabaseConnectionFactory
         }
 
         return DriverManager::getConnection($params, null, $this->eventManager);
+    }
+
+    private function getSchemeFromUrl(string $databaseURL): string
+    {
+        $matches = [];
+        if (!preg_match('@^([a-z0-9]+):@', $databaseURL, $matches)) {
+            throw new RuntimeException("Database URL '{$databaseURL}' has no scheme");
+        }
+
+        return $matches[1];
     }
 }
